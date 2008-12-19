@@ -27,6 +27,7 @@ if($all) { # run all tests on all certs as a single test run
     $harness->runtests(@tests);
 } else { # run all tests on each cert seperately
     for my $cert (@certs) {
+        print "## $cert\n";
         my @test_args = ($cert,);
         my %hargs = (
             verbosity => $verbose,
