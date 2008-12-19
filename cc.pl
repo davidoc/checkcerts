@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Crypt::OpenSSL::X509;
 
-my $x509 = Crypt::OpenSSL::X509->new_from_file('cert.pem');
+my $x509 = Crypt::OpenSSL::X509->new_from_file('cacert.pem');
 #print $x509->subject() . "\n";
 my $exts = $x509->extensions_by_oid();
 

@@ -49,5 +49,10 @@ for my $certfile(@ARGV) {
     ok(not($subject_name->has_oid_entry('0.9.2342.19200300.100.1.1')), 'DN does not have userID 2.3.5');
     
     # Extensions in CA certificates 2.4
-
+    my $exts = $x509->extensions_by_name();
+    ok($$exts{'X509v3 Basic Constraints'}, 'Has basicConstraints 2.4.1');
+    #is($$exts{'basicConstraints}->value(), "CA: TRUE", 'basicConstraints CA: TRUE 2.4.1');
+    ok($$exts{'X509v3 Basic Constraints'}->critical(), 'basicConstraints is critical 2.4.1');
+    ok($$exts{'X509v3 Key Usage'}, 'Has keyUsage 2.4.2');
+    ok($$exts{'X509v3 Key Usage'}->critical(), 'keyUsage is critical 2.4.2');
 }
