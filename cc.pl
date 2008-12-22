@@ -6,11 +6,11 @@ use Crypt::OpenSSL::X509;
 
 my $x509 = Crypt::OpenSSL::X509->new_from_file('cacert.pem');
 #print $x509->subject() . "\n";
-my $exts = $x509->extensions_by_oid();
+my $exts = $x509->extensions_by_name();
 
   foreach my $oid (keys %$exts) {
     my $ext = $$exts{$oid};
-    print $oid, " ", $ext->object()->name(), ": ", $ext->value(), "\n";
+    print $oid, " ", $ext->object()->oid(), ": ", $ext->value(), "\n";
   }
 
 

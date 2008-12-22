@@ -22,7 +22,7 @@ for my $certfile(@ARGV) {
 
     my $entries = $subject_name->entries();
     for my $entry (@$entries) {
-        ok($entry->is_printableString(), $entry->type() . ' is printableString 2.3') or diag($entry->as_string(), " not printableString");
+        ok($entry->is_printableString(), $entry->type() . ' is printableString 2.3') or diag("Name component ", $entry->as_string(), " SHOULD be printableString");
     }
 
     #2.3.1 CN should be descriptive
@@ -50,9 +50,41 @@ for my $certfile(@ARGV) {
     
     # Extensions in CA certificates 2.4
     my $exts = $x509->extensions_by_name();
-    ok($$exts{'X509v3 Basic Constraints'}, 'Has basicConstraints 2.4.1');
-    #is($$exts{'basicConstraints}->value(), "CA: TRUE", 'basicConstraints CA: TRUE 2.4.1');
-    ok($$exts{'X509v3 Basic Constraints'}->critical(), 'basicConstraints is critical 2.4.1');
-    ok($$exts{'X509v3 Key Usage'}, 'Has keyUsage 2.4.2');
-    ok($$exts{'X509v3 Key Usage'}->critical(), 'keyUsage is critical 2.4.2');
+    ok($$exts{'basicConstraints'}, 'Has basicConstraints 2.4.1');
+    # TODO is($$exts{'basicConstraints}->value(), "CA: TRUE", 'basicConstraints CA: TRUE 2.4.1');
+    ok($$exts{'basicConstraints'}->critical(), 'basicConstraints is critical 2.4.1');
+    ok($$exts{'keyUsage'}, 'Has keyUsage 2.4.2');
+    ok($$exts{'keyUsage'}->critical(), 'keyUsage is critical 2.4.2');
+    # extendedKeyUsage 2.4.3
+    ok(!($$exts{'extendedKeyUsage'}), "No extendedKeyUsage 2.4.3") or
+        diag("CA certificates SHOULD NOT include extendedKeyUsage extension");
+    if($$exts{'extendedKeyUsage'}) {
+        ok(not($$exts{'extendedKeyUsage'}->critical()), "extendedKeyUsage not critical 2.4.3") or 
+            diag("extendedKeyUsage MUST NOT be marked critical in CA certificates");
+    }
+    # nsCertType, nsComment, nsPolicyURL, nsRevocationURL 2.4.4
+    foreach my $ext ("nsCertType", "nsComment", "nsPolicyURL", "nsRevocationURL"){
+        ok(not($$exts{$ext}), "No $ext 2.4.4") or
+            diag("CA certificates SHOULD NOT include $ext extension");
+        if($$exts{$ext}) {
+            ok(!($$exts{$ext}->critical()), "$ext not critical 2.4.4") or 
+            diag("$ext MUST NOT be marked critical in CA certificates");
+        }
+    }
+    # TODO If nsCertType is used, it MUST be consistent with the keyUsage extension.
+    
+    # certificatePolicies 2.4.5
+    if($$exts{'certificatePolicies'}) {
+        ok(not($$exts{'certificatePolicies'}->critical()), "certificatePolicies not critical 2.4.5") or diag("certificatePolicies extension SHOULD NOT be marked critical if present");
+    }
+
+    # TODO cRLDistributionPoints 2.4.6
+    if($$exts{'crlDistributionPoints'}) {
+        # DO 
+    }
+    # Authority and Subject Key Identifier 2.4.7
+
+
+
+
 }
