@@ -1,3 +1,12 @@
+##
+## Test Suite for CA Certificates under GFD-C.125 "Grid Certificate Profile"
+##
+## David O'Callaghan <david.ocallaghan@cs.tcd.ie>
+## 2009-01-05
+##
+## TODO: implementation is incomplete
+##
+
 use Test::More qw( no_plan );
 use strict;
 use warnings;

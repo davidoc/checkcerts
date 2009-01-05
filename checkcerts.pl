@@ -71,7 +71,7 @@ Flags:
 
 =head1 DESCRIPTION
 
-B<checkcerts.pl> runs the supplied tests against the supplied certificates.
+B<checkcerts.pl> runs tests against certificates.
 The tests can check aspects of a certificate's profile against requirements
 or standards.
 

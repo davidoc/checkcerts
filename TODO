@@ -1,0 +1,6 @@
+Limitations:
+- The tests don't check the contents of cert extensions, only their presence/absence and criticality.
+- The tests for CA certs against GFD-C.125 are incomplete
+- There are no tests specifically for EE certs
+- The test framework returns OK/NOT OK for individual tests and PASS/FAIL for a test suite. This may not capture the nuances of the Grid Cert Profile or other docs.
+
