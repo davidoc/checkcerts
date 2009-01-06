@@ -13,7 +13,7 @@ my $help = 0;
 my $man = 0;
 
 GetOptions( "verbose!"=>\$verbose,
-            "all!"=>\$all,
+            "aggregate!"=>\$all,
             "help!"=>\$help,
             "man!"=>\$man,
             "tests:s{,}"=>\@tests,
@@ -58,7 +58,7 @@ checkcerts.pl [options] --tests [file ...] --certs [file ...]
 
 Options:
 
-   -a --all         run all tests on all certs as one test run
+   -a --aggregate   aggregate results for all tests on all certs 
 
    -h --help        brief help message
    -m --man         full documentation
@@ -79,14 +79,14 @@ or standards.
 
 =over 8
 
-=item B<-a --all>
+=item B<-a --aggregate>
 
-Run all supplied tests on all supplied certificates in a single test run.
-This will give an overall C<PASS> or C<FAIL> result, which may be useful
-to verify compliance of a set of certicates.
+Aggregate results of all supplied tests on all supplied certificates in a
+single test run.  This will give an overall C<PASS> or C<FAIL> result, which
+may be useful to verify compliance of a set of certicates.
 
-By default each combination of test suite and certificate gets its own
-test run.
+By default (when this option is not specified) each combination of test suite
+and certificate gets its own test run and an individual result.
 
 =item B<-h --help>  
 
@@ -160,9 +160,9 @@ Check all grid CA certificates against test suite:
     checkcerts.pl --test gfd125-ca.t \
     --certs /etc/grid-security/certificates/*.[0-9]
 
-Check all in a single test run to give overall result:
+Check all in a single test run to give aggregate result:
 
-    checkcerts.pl --all --test gfd125-ca.t \
+    checkcerts.pl --aggregate --test gfd125-ca.t \
     --certs /etc/grid-security/certificates/*.[0-9]
 
 =head1 NOTES
@@ -170,7 +170,7 @@ Check all in a single test run to give overall result:
 The supplied test suite C<gfd125-ca.t> makes use of an enhanced version
 of Crypt::OpenSSL::X509 that has not yet been incorporated into the 
 distributed version. It can temporarily be downloaded from
-I<https://www.cs.tcd.ie/David.OCallaghan/Crypt-OpenSSL-X509-0.9-TCD.tar.gz>
+I<https://www.cs.tcd.ie/David.OCallaghan/Crypt-OpenSSL-X509-0.9.1-TCD.tar.gz>
 or a bzr (I<http://bazaar-vcs.org/>) branch can be pulled from 
 I<https://www.cs.tcd.ie/David.OCallaghan/crypt-openssl-x509/>.
 

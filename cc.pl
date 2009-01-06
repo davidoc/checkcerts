@@ -10,7 +10,8 @@ my $exts = $x509->extensions_by_name();
 
   foreach my $oid (keys %$exts) {
     my $ext = $$exts{$oid};
-    print $oid, " ", $ext->object()->oid(), ": ", $ext->value(), "\n";
+    print $oid, " ", $ext->object()->oid(), " [",
+        $ext->is_critical(), "]: ", $ext->value(), "\n";
   }
 
 

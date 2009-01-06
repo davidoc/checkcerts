@@ -31,7 +31,7 @@ with operating system distributions or from CPAN (cpan.org).
 (* NOTE) The supplied test suite "gfd125-ca.t" makes use of an enhanced
 version of Crypt::OpenSSL::X509 that has not yet been incorporated into the
 distributed version. It can temporarily be downloaded from
-https://www.cs.tcd.ie/David.OCallaghan/Crypt-OpenSSL-X509-0.9-TCD.tar.gz or a
+https://www.cs.tcd.ie/David.OCallaghan/Crypt-OpenSSL-X509-0.9.1-TCD.tar.gz or a
 bzr (http://bazaar-vcs.org/) branch can be pulled from
 https://www.cs.tcd.ie/David.OCallaghan/crypt-openssl-x509/. 
 
@@ -46,4 +46,4 @@ To try it out, run:
 
     ./checkcerts.pl -t gfd125-ca.t -c cacert.pem
 
-You should expect to see 4 failures.
+You should expect to see 2 failures.
