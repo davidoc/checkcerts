@@ -2,7 +2,8 @@
 ## Test Suite for CA Certificates under GFD-C.125 "Grid Certificate Profile"
 ##
 ## David O'Callaghan <david.ocallaghan@cs.tcd.ie>
-## 2009-01-05
+## 2009-01-06
+## VERSION 0.1.1
 ##
 ## TODO: implementation is incomplete
 ##
@@ -12,7 +13,7 @@ use strict;
 use warnings;
 
 # Pre-requisites
-use Crypt::OpenSSL::X509;
+use Crypt::OpenSSL::X509 0.9.1;
 
 for my $certfile(@ARGV) {
     ok(my $x509 = Crypt::OpenSSL::X509->new_from_file($certfile), "new_from_file $certfile");
