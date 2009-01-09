@@ -2,7 +2,7 @@ checkcerts
 ===========
 
 David O'Callaghan <david.ocallaghan@cs.tcd.ie>
-2009-01-05
+2009-01-09
 
 Introduction
 -------------
@@ -23,7 +23,7 @@ with operating system distributions or from CPAN (cpan.org).
 
  * Getopt::Long
  * Pod::Usage
- * TAP::Harness
+ * Test::Harness
  * Test::More
  * Crypt::OpenSSL::X509 (* but see NOTE below)
 

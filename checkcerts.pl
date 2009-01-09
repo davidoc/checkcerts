@@ -1,53 +1,12 @@
 #!/usr/bin/env perl
 
 use strict;
-use TAP::Harness;
+
+use Test::Harness;
+
 use Getopt::Long;
 use Pod::Usage;
 
-my @tests;
-my @certs;
-my $verbose = 0;
-my $all = 0;
-my $help = 0;
-my $man = 0;
-
-GetOptions( "verbose!"=>\$verbose,
-            "aggregate!"=>\$all,
-            "help!"=>\$help,
-            "man!"=>\$man,
-            "tests:s{,}"=>\@tests,
-            "certs:s{,}"=>\@certs) or pod2usage(2);
-
-pod2usage(1) if $help;
-pod2usage(-exitstatus => 0, -verbose => 2) if $man;
-
-print STDERR "No certificates specified\n" if($#certs < 0); 
-print STDERR "No tests specified\n" if($#tests < 0);
-pod2usage(2) if($#certs < 0 or $#tests < 0); 
-
-if($all) { # run all tests on all certs as a single test run
-    my @test_args = @certs;
-    my %hargs = (
-        verbosity => $verbose,
-        test_args => \@test_args,
-    );
-    my $harness = TAP::Harness->new(\%hargs);
-    $harness->runtests(@tests);
-} else { # run all tests on each cert seperately
-    for my $cert (@certs) {
-        print "## $cert\n";
-        my @test_args = ($cert,);
-        my %hargs = (
-            verbosity => $verbose,
-            test_args => \@test_args,
-        );
-        my $harness = TAP::Harness->new(\%hargs);
-        $harness->runtests(@tests);
-    }
-}
-
-__END__
 =head1 NAME
 
 checkcerts.pl - check certificate profiles
@@ -74,6 +33,15 @@ Flags:
 B<checkcerts.pl> runs tests against certificates.
 The tests can check aspects of a certificate's profile against requirements
 or standards.
+
+=cut
+
+my @tests;
+my @certs;
+my $verbose = 0;
+my $all = 0;
+my $help = 0;
+my $man = 0;
 
 =head1 OPTIONS
 
@@ -124,6 +92,48 @@ to check. Certificates should be in PEM format.
 This flag can appear multiple times.
 
 =back
+=cut
+
+GetOptions( "verbose!"=>\$verbose,
+            "aggregate!"=>\$all,
+            "help!"=>\$help,
+            "man!"=>\$man,
+            "tests:s{,}"=>\@tests,
+            "certs:s{,}"=>\@certs) or pod2usage(2);
+
+pod2usage(1) if $help;
+pod2usage(-exitstatus => 0, -verbose => 2) if $man;
+
+print STDERR "No certificates specified\n" if($#certs < 0); 
+print STDERR "No tests specified\n" if($#tests < 0);
+pod2usage(2) if($#certs < 0 or $#tests < 0); 
+
+$Test::Harness::Verbose = $verbose;
+
+if($all) { # run all tests on all certs as a single test run
+    run_tests_on_certs(@certs);
+} else { # run all tests on each cert seperately
+    for my $cert (@certs) {
+        run_tests_on_certs(($cert,));
+    }
+}
+
+sub run_tests_on_certs() {
+    my @tcerts = @_;
+    # Write list of certs to a known file. Can't easily use a temp
+    # file  as there is no way to pass the name or handle to the test.
+    open CERTS, ">./certs" or die "\n./certs: $!";
+    for my $cert (@tcerts) { print CERTS "$cert\n"; }
+    close CERTS;
+    # Run the tests in "eval" to catch exception.
+    eval { runtests(@tests) };
+    # currently do nothing with exception
+    #warn ($@) if $@;
+}
+
+1;
+__END__
+
 
 =head1 TESTS
 

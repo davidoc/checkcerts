@@ -2,29 +2,27 @@
 ## Test Suite for CA Certificates under GFD-C.125 "Grid Certificate Profile"
 ##
 ## David O'Callaghan <david.ocallaghan@cs.tcd.ie>
-## 2009-01-06
-## VERSION 0.1.1
+## 2009-01-09
+## VERSION 0.1.2
 ##
 ## TODO: implementation is incomplete
 ##
 
-use Test::More qw( no_plan );
-use strict;
-use warnings;
-
 # Pre-requisites
-use Crypt::OpenSSL::X509 0.9.1;
+use CheckCertsTest;
 
-for my $certfile(@ARGV) {
+for my $certfile(@certlist) {
     ok(my $x509 = Crypt::OpenSSL::X509->new_from_file($certfile), "new_from_file $certfile");
+    diag "\n\n * * * \nCert Subject: ", $x509->subject, "\n";
+    ok($x509->subject, "Subject: " . $x509->subject);
 
     # Cert version 2.1
     cmp_ok($x509->version, '==', 2, 'version 2.1');
 
     # Serial & Message Digest 2.2
-    like($x509->serial, qr/[a-fA-F0-9]+/, 'serial 2.2');
-    unlike($x509->sig_alg_name, '/md5/i', 'not md5 2.2');
-    like($x509->sig_alg_name, '/sha-?1/i', 'sha-1 2.2');
+    like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial number format 2.2');
+    unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be md5 in new CA certs 2.2');
+    like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be sha-1 2.2');
 
     # Issuer and Subject names 2.3
     my $subject_name = $x509->subject_name();
@@ -32,7 +30,8 @@ for my $certfile(@ARGV) {
 
     my $entries = $subject_name->entries();
     for my $entry (@$entries) {
-        ok($entry->is_printableString(), $entry->type() . ' is printableString 2.3') or diag("Name component ", $entry->as_string(), " SHOULD be printableString");
+        ok($entry->is_printableString(), $entry->type() . ' is printableString 2.3') or diag("Name component ", $entry->as_string(), " SHOULD be printableString")
+            unless $entry->type() eq "DC";
     }
 
     #2.3.1 CN should be descriptive
@@ -62,9 +61,11 @@ for my $certfile(@ARGV) {
     my $exts = $x509->extensions_by_name();
     ok($$exts{'basicConstraints'}, 'Has basicConstraints 2.4.1');
     # TODO is($$exts{'basicConstraints}->value(), "CA: TRUE", 'basicConstraints CA: TRUE 2.4.1');
-    ok($$exts{'basicConstraints'}->critical(), 'basicConstraints is critical 2.4.1');
+    ok($$exts{'basicConstraints'}->critical(), 'basicConstraints critical 2.4.1') or
+        diag("basicConstraints SHOULD be marked critical in CA certificates");
     ok($$exts{'keyUsage'}, 'Has keyUsage 2.4.2');
-    ok($$exts{'keyUsage'}->critical(), 'keyUsage is critical 2.4.2');
+    ok($$exts{'keyUsage'}->is_critical(), 'keyUsage critical 2.4.2') or
+        diag("keyUsage SHOULD be marked critical in CA certificates");
     # extendedKeyUsage 2.4.3
     ok(!($$exts{'extendedKeyUsage'}), "No extendedKeyUsage 2.4.3") or
         diag("CA certificates SHOULD NOT include extendedKeyUsage extension");
@@ -78,7 +79,7 @@ for my $certfile(@ARGV) {
             diag("CA certificates SHOULD NOT include $ext extension");
         if($$exts{$ext}) {
             ok(!($$exts{$ext}->critical()), "$ext not critical 2.4.4") or 
-            diag("$ext MUST NOT be marked critical in CA certificates");
+                diag("$ext MUST NOT be marked critical in CA certificates");
         }
     }
     # TODO If nsCertType is used, it MUST be consistent with the keyUsage extension.
