@@ -15,4 +15,9 @@ while(<CERTS>) {
 }
 close CERTS;
 
+sub is_member($@) {
+    my ($target,@list) = @_;
+    return (grep {"$_" eq "$target"} @list);
+}
+
 1;

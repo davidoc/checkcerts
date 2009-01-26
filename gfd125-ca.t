@@ -30,8 +30,9 @@ for my $certfile(@certlist) {
 
     my $entries = $subject_name->entries();
     for my $entry (@$entries) {
-        ok($entry->is_printableString(), $entry->type() . ' is printableString 2.3') or diag("Name component ", $entry->as_string(), " SHOULD be printableString")
-            unless $entry->type() eq "DC";
+        if( not is_member($entry->type(), ("DC","emailAddress") )) {    
+            ok($entry->is_printableString(), $entry->type() . ' is printableString 2.3') or diag("Name component ", $entry->as_string(), " SHOULD be printableString")
+        }
     }
 
     #2.3.1 CN should be descriptive
@@ -53,7 +54,7 @@ for my $certfile(@certlist) {
     #isa($x509->subject, "ASN1_SEQUENCE", 'DN is ASN1 SEQUENCE 2.3');
 
     ok(not($subject_name->has_long_entry('serialNumber')), 'DN does not have serialNumber 2.3.3');
-    ok(not($subject_name->has_long_entry('emailAddress')), 'DN does not have emailAddress 2.3.4');
+    ok(not($subject_name->has_long_entry('emailAddress')), 'DN does not have emailAddress 2.3.4') or diag("emailAddress SHOULD NOT be used in DN");
     ok(not($subject_name->has_entry('UID')), 'DN does not have UID 2.3.5');
     ok(not($subject_name->has_oid_entry('0.9.2342.19200300.100.1.1')), 'DN does not have userID 2.3.5');
     
@@ -61,10 +62,10 @@ for my $certfile(@certlist) {
     my $exts = $x509->extensions_by_name();
     ok($$exts{'basicConstraints'}, 'Has basicConstraints 2.4.1');
     # TODO is($$exts{'basicConstraints}->value(), "CA: TRUE", 'basicConstraints CA: TRUE 2.4.1');
-    ok($$exts{'basicConstraints'}->critical(), 'basicConstraints critical 2.4.1') or
+    $$exts{'basicConstraints'} and ok($$exts{'basicConstraints'}->critical(), 'basicConstraints critical 2.4.1') or
         diag("basicConstraints SHOULD be marked critical in CA certificates");
-    ok($$exts{'keyUsage'}, 'Has keyUsage 2.4.2');
-    ok($$exts{'keyUsage'}->is_critical(), 'keyUsage critical 2.4.2') or
+    ok($$exts{'keyUsage'}, 'Has keyUsage 2.4.2') or diag("keyUsage MUST be included in CA certificates");
+    $$exts{'keyUsage'} and ok($$exts{'keyUsage'}->is_critical(), 'keyUsage critical 2.4.2') or
         diag("keyUsage SHOULD be marked critical in CA certificates");
     # extendedKeyUsage 2.4.3
     ok(!($$exts{'extendedKeyUsage'}), "No extendedKeyUsage 2.4.3") or
