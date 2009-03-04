@@ -177,11 +177,8 @@ Check all in a single test run to give aggregate result:
 
 =head1 NOTES
 
-The supplied test suite C<gfd125-ca.t> makes use of an enhanced version
-of Crypt::OpenSSL::X509 that has not yet been incorporated into the 
-distributed version. It can temporarily be downloaded from
-I<https://www.cs.tcd.ie/David.OCallaghan/Crypt-OpenSSL-X509-0.9.1-TCD.tar.gz>
-or a bzr (I<http://bazaar-vcs.org/>) branch can be pulled from 
-I<https://www.cs.tcd.ie/David.OCallaghan/crypt-openssl-x509/>.
+The supplied test suite C<gfd125-ca.t> uses a pre-release version of
+Crypt::OpenSSL::X509 that is not yet widely distributed.  It can be downloaded
+from I<http://github.com/davidoc/perl-crypt-openssl-x509/tree/master>.
 
 =cut

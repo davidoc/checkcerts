@@ -4,3 +4,6 @@ Limitations:
 - There are no tests specifically for EE certs
 - The test framework returns OK/NOT OK for individual tests and PASS/FAIL for a test suite. This may not capture the nuances of the Grid Cert Profile or other docs.
 
+From EU Grid PMA meeting - 2009-01:
+- Make some tests (SHOULDs, other ambiguous or harmless tests) into warnings
+- Create a Crypt::OpenSSL::Req module

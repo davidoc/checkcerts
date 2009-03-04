@@ -2,7 +2,7 @@ checkcerts
 ===========
 
 David O'Callaghan <david.ocallaghan@cs.tcd.ie>
-2009-01-28
+2009-03-04
 
 
 Introduction
@@ -28,12 +28,9 @@ with operating system distributions or from CPAN (cpan.org).
  * Test::More
  * Crypt::OpenSSL::X509 (* but see NOTE below)
 
-(* NOTE) The supplied test suite "gfd125-ca.t" makes use of an enhanced
-version of Crypt::OpenSSL::X509 that has not yet been incorporated into the
-distributed version. It can temporarily be downloaded from
-https://www.cs.tcd.ie/David.OCallaghan/Crypt-OpenSSL-X509-0.9.2-TCD.tar.gz or a
-bzr (http://bazaar-vcs.org/) branch can be pulled from
-https://www.cs.tcd.ie/David.OCallaghan/crypt-openssl-x509/. 
+(* NOTE) The supplied test suite "gfd125-ca.t" uses a pre-release version of
+Crypt::OpenSSL::X509 that is not yet widely distributed.  It can be downloaded
+from http://github.com/davidoc/perl-crypt-openssl-x509/tree/master.
 
 
 Running
