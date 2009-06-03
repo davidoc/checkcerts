@@ -1,4 +1,6 @@
 .bzrignore
 .bzr
+.gitignore
+.git
 certs
 *.tar.gz
