@@ -6,7 +6,7 @@
 ## VERSION 0.1.3
 ##
 ## TODO: implementation is incomplete
-##
+## 
 
 # Pre-requisites
 use CheckCertsTest;
@@ -20,8 +20,8 @@ for my $certfile(@certlist) {
     cmp_ok($x509->version, '==', 2, 'Version value MUST be "2" per X.509v3 (2.1)');
 
     # Serial & Message Digest 2.2
-    #like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial number format (2.2)');
-    #TODO serial number SHOULD be > 0
+    like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (2.2)');	  
+    ok($x509->serial,'Serial number should be > 0');
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new CA certs (2.2)');
     like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (2.2)');
 
@@ -54,10 +54,11 @@ for my $certfile(@certlist) {
             $oldloc = $loc;
         }
     }
+
     #2.3.2 DN should have O
     #2.3.2 C should match issuer
     #isa($x509->subject, "ASN1_SEQUENCE", 'DN is ASN1 SEQUENCE 2.3');
-
+	#ASN sequence MUST only contain SET's of length 1
     ok(not($subject_name->has_long_entry('serialNumber')), 'serialNumber SHOULD NOT be used in DN (2.3.3)');
     ok(not($subject_name->has_long_entry('emailAddress')), 'emailAddress SHOULD NOT be used in DN(2.3.4)');
     ok(not($subject_name->has_entry('UID')), 'DN does not have UID (2.3.5)');
@@ -65,11 +66,20 @@ for my $certfile(@certlist) {
     
     # Extensions in CA certificates 2.4
     my $exts = $x509->extensions_by_name();
+
+	# basicConstraints 2.4.1
     ok($$exts{'basicConstraints'}, 'CA cert MUST include basicConstraints (2.4.1)');
-    # TODO is($$exts{'basicConstraints}->value(), "CA: TRUE", 'basicConstraints CA: TRUE 2.4.1');
+	is($$exts{'basicConstraints'}->to_string(), "CA:TRUE", 'basicConstraints CA: TRUE 2.4.1');
     $$exts{'basicConstraints'} and ok($$exts{'basicConstraints'}->critical(), 'basicConstraints SHOULD be marked critical (2.4.1)'); 
+	
+	# keyUsage 2.4.2
     ok($$exts{'keyUsage'}, 'CA cert MUST include keyUsage (2.4.2)');
     $$exts{'keyUsage'} and ok($$exts{'keyUsage'}->is_critical(), 'keyUsage SHOULD be marked critical (2.4.2)');
+	# For a CA cert, keyCertSign must be set and crlSign must be set if the CA cert is used to directly issue crls
+	if($$exts{'basicConstraints'}->to_string() =~ qr/CA:TRUE/i){
+		like($$exts{'keyUsage'}->to_string(), qr/Certificate Sign/, 'For a CA cert, keyCertSign must be set');
+	}
+
     # extendedKeyUsage 2.4.3
     ok(!($$exts{'extendedKeyUsage'}), "CA cert SHOULD NOT include extendedKeyUsage (2.4.3)");
     $$exts{'extendedKeyUsage'} and 
@@ -79,19 +89,48 @@ for my $certfile(@certlist) {
         ok(not($$exts{$ext}), "CA cert SHOULD NOT include $ext extension (2.4.4)");
         $$exts{$ext} and ok(!($$exts{$ext}->critical()), "$ext MUST NOT be marked critical (2.4.4)");
     }
-    # TODO If nsCertType is used, it MUST be consistent with the keyUsage extension.
-    
+
+    # nsCertType 2.4.4
+	if($$exts{'nsCertType'}){
+		($$exts{'nsCertType'}->to_string() =~ qr/SSL Client|S\/MIME CA|Object Signing CA/) and
+			like($$exts{'keyUsage'}->to_string(), qr/Digital Signature/, "If nsCertType is used, it MUST be consistent with the keyUsage extension");
+		
+		($$exts{'nsCertType'}->to_string() =~ qr/SSL CA/) and
+			like($$exts{'keyUsage'}->to_string(), qr/Certificate Sign/, "If nsCertType is used, it MUST be consistent with the keyUsage extension");		
+	}
+	
     # certificatePolicies 2.4.5
     $$exts{'certificatePolicies'} and
         ok(not($$exts{'certificatePolicies'}->critical()), "certificatePolicies extension SHOULD NOT be marked critical (2.4.5)");
 
-    # TODO cRLDistributionPoints 2.4.6
-    if($$exts{'crlDistributionPoints'}) {
-        # TODO 
-    }
+    # crlDistributionPoints 2.4.6
+    # Should be in any end-entity and intermediate (not self-signed) CA certs that issue CRLs.
+    if($$exts{'keyUsage'}->to_string() =~ qr/CRL sign/i and not($x509->subject eq $x509->issuer)){
+		ok($$exts{'crlDistributionPoints'}, 'Should be in any intermediate (not self-signed) CA certs that issue CRLs')
+	}
+	#For subordinate CAs, where CDP is present, it must contain at least one http URI
+    $$exts{'crlDistributionPoints'} and not($x509->subject eq $x509->issuer) and 
+		like($$exts{'crlDistributionPoints'}->value(), qr/http:(.+)/, "In subordinate CAs, a CDP must contain at least one http URI");
+	
+
     # Authority and Subject Key Identifier 2.4.7
-
-
-
-
+	if($$exts{'subjectKeyIdentifier'}->to_string() =~ qr/CA:TRUE/i){
+		ok($$exts{'subjectKeyIdentifier'}, "Subject Key Identifier must be included in CA certs");
+	}
+	
+	# TODO check properly if the cert is self-signed, rather than checking the issuer and subject
+    # If cert is self-signed i.e. it's signed with its own key, the signature matches the public key (or the issuer==subject)
+		if(!($x509->subject eq $x509->issuer)){
+		ok($$exts{'authorityKeyIdentifier'}, "If the cert is not self-signed, an Authority Key Identifier must be included");
+	}
+	# the cert is self-signed, the authorityKeyIdentifier's keyid must be the same as subjectkeyIdentifier
+	else {
+		my $subkeyid = $$exts{'subjectKeyIdentifier'}->to_string();
+		my $authkeyid = $$exts{'authorityKeyIdentifier'}->to_string();
+		like($authkeyid, qr/$subkeyid/, "AKID's keyid should be the same as SKID");
+	}
+	# TODO only the keyIdentifier attribute should be included, if any
+	
+	# nameConstraints 2.4.8
+	ok(not($$exts{'nameConstraints'}), "The use of nameConstraints is not recommended");
 }
