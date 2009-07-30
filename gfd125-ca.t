@@ -21,7 +21,8 @@ for my $certfile(@certlist) {
 
     # Serial & Message Digest 2.2
     like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (2.2)');	  
-    ok($x509->serial,'Serial number should be > 0');
+    # serial number should be >0
+    # ok($x509->serial,'Serial number should be > 0');
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new CA certs (2.2)');
     like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (2.2)');
 
@@ -76,9 +77,8 @@ for my $certfile(@certlist) {
     ok($$exts{'keyUsage'}, 'CA cert MUST include keyUsage (2.4.2)');
     $$exts{'keyUsage'} and ok($$exts{'keyUsage'}->is_critical(), 'keyUsage SHOULD be marked critical (2.4.2)');
 	# For a CA cert, keyCertSign must be set and crlSign must be set if the CA cert is used to directly issue crls
-	if($$exts{'basicConstraints'}->to_string() =~ qr/CA:TRUE/i){
-		like($$exts{'keyUsage'}->to_string(), qr/Certificate Sign/, 'For a CA cert, keyCertSign must be set');
-	}
+	like($$exts{'keyUsage'}->to_string(), qr/Certificate Sign/, 'For a CA cert, keyCertSign must be set');
+
 
     # extendedKeyUsage 2.4.3
     ok(!($$exts{'extendedKeyUsage'}), "CA cert SHOULD NOT include extendedKeyUsage (2.4.3)");
@@ -93,6 +93,7 @@ for my $certfile(@certlist) {
     # nsCertType 2.4.4
 	if($$exts{'nsCertType'}){
 		($$exts{'nsCertType'}->to_string() =~ qr/SSL Client|S\/MIME CA|Object Signing CA/) and
+			#specific error mesg
 			like($$exts{'keyUsage'}->to_string(), qr/Digital Signature/, "If nsCertType is used, it MUST be consistent with the keyUsage extension");
 		
 		($$exts{'nsCertType'}->to_string() =~ qr/SSL CA/) and
@@ -110,7 +111,7 @@ for my $certfile(@certlist) {
 	}
 	#For subordinate CAs, where CDP is present, it must contain at least one http URI
     $$exts{'crlDistributionPoints'} and not($x509->subject eq $x509->issuer) and 
-		like($$exts{'crlDistributionPoints'}->value(), qr/http:(.+)/, "In subordinate CAs, a CDP must contain at least one http URI");
+		like($$exts{'crlDistributionPoints'}->to_string(), qr/http:(.+)/, "In subordinate CAs, a CDP must contain at least one http URI");
 	
 
     # Authority and Subject Key Identifier 2.4.7
