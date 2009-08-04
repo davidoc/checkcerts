@@ -81,23 +81,26 @@ for my $certfile(@certlist) {
 
 
     # extendedKeyUsage 2.4.3
-    ok(!($$exts{'extendedKeyUsage'}), "CA cert SHOULD NOT include extendedKeyUsage (2.4.3)");
+    ok(not($$exts{'extendedKeyUsage'}), "CA cert SHOULD NOT include extendedKeyUsage (2.4.3)");
     $$exts{'extendedKeyUsage'} and 
         ok(not($$exts{'extendedKeyUsage'}->critical()), "extendedKeyUsage MUST NOT be marked critical (2.4.3)");
     # nsCertType, nsComment, nsPolicyURL, nsRevocationURL 2.4.4
     foreach my $ext ("nsCertType", "nsComment", "nsPolicyURL", "nsRevocationURL"){
         ok(not($$exts{$ext}), "CA cert SHOULD NOT include $ext extension (2.4.4)");
-        $$exts{$ext} and ok(!($$exts{$ext}->critical()), "$ext MUST NOT be marked critical (2.4.4)");
+        $$exts{$ext} and ok(not($$exts{$ext}->critical()), "$ext MUST NOT be marked critical (2.4.4)");
     }
 
     # nsCertType 2.4.4
 	if($$exts{'nsCertType'}){
 		($$exts{'nsCertType'}->to_string() =~ qr/SSL Client|S\/MIME CA|Object Signing CA/) and
-			#specific error mesg
-			like($$exts{'keyUsage'}->to_string(), qr/Digital Signature/, "If nsCertType is used, it MUST be consistent with the keyUsage extension");
+			like($$exts{'keyUsage'}->to_string(), qr/Digital Signature/, 
+				 "The SSL Client, S/MIME CA and Object Signing CA attributes in nsCertType require the Digital Signature attribute of keyUsage. 
+                  If used, nsCertType MUST be consistent with the keyUsage extension");
 		
 		($$exts{'nsCertType'}->to_string() =~ qr/SSL CA/) and
-			like($$exts{'keyUsage'}->to_string(), qr/Certificate Sign/, "If nsCertType is used, it MUST be consistent with the keyUsage extension");		
+			like($$exts{'keyUsage'}->to_string(), qr/Certificate Sign/, 
+				 "The SSL CA attribute of nsCertType requires the keyCertSign attribute of keyUsage. 
+                  If used, nsCertType MUST be consistent with the keyUsage extension");		
 	}
 	
     # certificatePolicies 2.4.5
@@ -115,17 +118,17 @@ for my $certfile(@certlist) {
 	
 
     # Authority and Subject Key Identifier 2.4.7
-	if($$exts{'subjectKeyIdentifier'}->to_string() =~ qr/CA:TRUE/i){
+	if($$exts{'basicConstraints'}->to_string() =~ qr/CA:TRUE/i){
 		ok($$exts{'subjectKeyIdentifier'}, "Subject Key Identifier must be included in CA certs");
 	}
 	
 	# TODO check properly if the cert is self-signed, rather than checking the issuer and subject
     # If cert is self-signed i.e. it's signed with its own key, the signature matches the public key (or the issuer==subject)
-		if(!($x509->subject eq $x509->issuer)){
+	if(not($x509->subject eq $x509->issuer)){
 		ok($$exts{'authorityKeyIdentifier'}, "If the cert is not self-signed, an Authority Key Identifier must be included");
 	}
 	# the cert is self-signed, the authorityKeyIdentifier's keyid must be the same as subjectkeyIdentifier
-	else {
+	else{
 		my $subkeyid = $$exts{'subjectKeyIdentifier'}->to_string();
 		my $authkeyid = $$exts{'authorityKeyIdentifier'}->to_string();
 		like($authkeyid, qr/$subkeyid/, "AKID's keyid should be the same as SKID");
