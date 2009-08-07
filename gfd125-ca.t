@@ -70,14 +70,15 @@ for my $certfile(@certlist) {
 
 	# basicConstraints 2.4.1
     ok($$exts{'basicConstraints'}, 'CA cert MUST include basicConstraints (2.4.1)');
-	is($$exts{'basicConstraints'}->to_string(), "CA:TRUE", 'basicConstraints CA: TRUE 2.4.1');
+	ok($$exts{'basicConstraints'}->basicC("ca"), 'basicConstraints CA: TRUE 2.4.1');
     $$exts{'basicConstraints'} and ok($$exts{'basicConstraints'}->critical(), 'basicConstraints SHOULD be marked critical (2.4.1)'); 
 	
 	# keyUsage 2.4.2
     ok($$exts{'keyUsage'}, 'CA cert MUST include keyUsage (2.4.2)');
     $$exts{'keyUsage'} and ok($$exts{'keyUsage'}->is_critical(), 'keyUsage SHOULD be marked critical (2.4.2)');
 	# For a CA cert, keyCertSign must be set and crlSign must be set if the CA cert is used to directly issue crls
-	like($$exts{'keyUsage'}->to_string(), qr/Certificate Sign/, 'For a CA cert, keyCertSign must be set');
+    my %key_hash = $$exts{'keyUsage'}->hash_bit_string();
+	ok($key_hash{'Certificate Sign'}, 'For a CA cert, keyCertSign must be set');
 
 
     # extendedKeyUsage 2.4.3
@@ -92,15 +93,16 @@ for my $certfile(@certlist) {
 
     # nsCertType 2.4.4
 	if($$exts{'nsCertType'}){
-		($$exts{'nsCertType'}->to_string() =~ qr/SSL Client|S\/MIME CA|Object Signing CA/) and
-			like($$exts{'keyUsage'}->to_string(), qr/Digital Signature/, 
+		my %ns_hash = $$exts{'nsCertType'}->hash_bit_string();
+		$ns_hash{'SSL Client'} || $ns_hash{'S/MIME CA'} || $ns_hash{'Object Signing CA'} and
+			ok($key_hash{'Digital Signature'},
 				 "The SSL Client, S/MIME CA and Object Signing CA attributes in nsCertType require the Digital Signature attribute of keyUsage. 
                   If used, nsCertType MUST be consistent with the keyUsage extension");
 		
-		($$exts{'nsCertType'}->to_string() =~ qr/SSL CA/) and
-			like($$exts{'keyUsage'}->to_string(), qr/Certificate Sign/, 
+		$ns_hash{'SSL CA'} and
+			ok($key_hash{'Certificate Sign'}, 
 				 "The SSL CA attribute of nsCertType requires the keyCertSign attribute of keyUsage. 
-                  If used, nsCertType MUST be consistent with the keyUsage extension");		
+                  If used, nsCertType MUST be consistent with the keyUsage extension");
 	}
 	
     # certificatePolicies 2.4.5
@@ -109,7 +111,7 @@ for my $certfile(@certlist) {
 
     # crlDistributionPoints 2.4.6
     # Should be in any end-entity and intermediate (not self-signed) CA certs that issue CRLs.
-    if($$exts{'keyUsage'}->to_string() =~ qr/CRL sign/i and not($x509->subject eq $x509->issuer)){
+    if($key_hash{'CRL sign'} and not($x509->subject eq $x509->issuer)){
 		ok($$exts{'crlDistributionPoints'}, 'Should be in any intermediate (not self-signed) CA certs that issue CRLs')
 	}
 	#For subordinate CAs, where CDP is present, it must contain at least one http URI
@@ -118,7 +120,7 @@ for my $certfile(@certlist) {
 	
 
     # Authority and Subject Key Identifier 2.4.7
-	if($$exts{'basicConstraints'}->to_string() =~ qr/CA:TRUE/i){
+	if($$exts{'basicConstraints'}->basicC("ca")){
 		ok($$exts{'subjectKeyIdentifier'}, "Subject Key Identifier must be included in CA certs");
 	}
 	

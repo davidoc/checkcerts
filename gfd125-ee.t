@@ -10,9 +10,9 @@
 use CheckCertsTest;
 
 for my $certfile (@certlist) {
-	ok(my $x509 = Crypt::OpenSSL::X509->new_from_file($certfile), "new_from_file $certfile");
-	diag "\n\n * * * \nCert Subject: ", $x509->subject, "\n";
-	ok($x509->subject, "Subject: ", $x509->subject);
+    ok(my $x509 = Crypt::OpenSSL::X509->new_from_file($certfile), "new_from_file $certfile");
+    diag "\n\n * * * \nCert Subject: ", $x509->subject, "\n";
+    ok($x509->subject, "Subject: " . $x509->subject);
 
 	# Cert version, serial number and message digest 3.1
 	cmp_ok($x509->version, "==", 2, 'Version number must be "2" as per X509v3 (3.1)');
@@ -22,7 +22,7 @@ for my $certfile (@certlist) {
     like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (3.1)');
 
 	# Subject Distinguished Names 3.2
-	my $subject_name - $x509->subject_name();
+	my $subject_name = $x509->subject_name();
     ok($subject_name->has_entry('CN'), 'End entity certificates MUST include CN in DN (3.2.3)');
 	
     # Common Name component should be encoded as printableString,
@@ -79,8 +79,8 @@ for my $certfile (@certlist) {
 	
 	# basicConstraints 3.3.1
     if($$exts{'basicConstraints'}){
-		is($$exts{'basicConstraints'}->to_string(), "CA:FALSE", 'basicConstraints CA:FALSE 3.3.1');
-		is($$exts{'basicConstraints'}->to_string(), "pathlen", 'pathlenConstraint attribute must not be present(3.3.1)');
+		ok(not($$exts{'basicConstraints'}->basicC("ca")), 'basicConstraints CA:FALSE 3.3.1');
+		is($$exts{'basicConstraints'}->basicC("pathlen"), 0, 'pathlenConstraint attribute must not be present(3.3.1)');
 		ok($$exts{'basicConstraints'}->critical(), 'basicConstraints MUST be marked critical (3.3.1)');
 	}
 	
@@ -98,7 +98,7 @@ for my $certfile (@certlist) {
 
 	# nsCertType 3.3.5
 	# TODO consistency checking with extendedKeyUsage
-	ok(not($$exts{'nsCertType'},"It is recommended not to use nsCertType in new certificates (3.3.5)"));
+	ok(not($$exts{'nsCertType'}),"It is recommended not to use nsCertType in new certificates (3.3.5)");
 	$$exts{'nsCertType'} and 
 		ok(not($$exts{'nsCertType'}->critical(), "nsCertType MUST NOT be marked critical (3.3.5)"));
 
@@ -122,13 +122,11 @@ for my $certfile (@certlist) {
 "authorityKeyIdentifier extension MUST NOT be marked as critical (3.3.9)"));
 
 	# subjectKeyIdentifier 3.3.10
-	$$exts{'subjectKeyIdentifier'} and ok(not($$exts{'subjectKeyIdentifier'}->critical(), 
-"subjectKeyIdentifier MUST NOT be marked as critical (3.3.10)"));
+	$$exts{'subjectKeyIdentifier'} and ok(not($$exts{'subjectKeyIdentifier'}->critical(), "subjectKeyIdentifier MUST NOT be marked as critical (3.3.10)"));
 
 	# certificatePolicies 3.3.11
 	ok($$exts{'certificatePolicies'}, "certificatePolicies extension MUST be present (3.3.11)");
-	ok(not($$exts{'certificatePolicies'}->critical(), 
-"certificatePolicies MUST NOT be marked critical (3.3.11)"));
+	ok(not($$exts{'certificatePolicies'}->critical(), "certificatePolicies MUST NOT be marked critical (3.3.11)"));
 	# certificatePolicies MUST contain at least one policy OID. 
 
 	# subjectAlternativeName, issuerAlternativeName 3.3.12
@@ -144,7 +142,7 @@ for my $certfile (@certlist) {
 	# service, as this will impair operations as soon as an OCSP client is implemented and enabled 
 	# in the software.
 
-	ok(not($$exts{'authorityInformationAccess'}->critical(), 
-		   "authorityInformationAccess extension MUST NOT be marked critical (3.3.13)"));
-	
+	ok(not($$exts{'authorityInformationAccess'}->critical()), 
+		   "authorityInformationAccess extension MUST NOT be marked critical (3.3.13)");
 
+}
