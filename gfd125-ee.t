@@ -19,7 +19,7 @@ for my $certfile (@certlist) {
 	like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (3.1)');
     # serial number should be >0
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new EE certs (3.1)');
-    like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (3.1)');
+    like($x509->sig_alg_name, '/sha-?1/i', "Message digest SHOULD be SHA-1 (3.1)");
 
 	# Subject Distinguished Names 3.2
 	my $subject_name = $x509->subject_name();
@@ -32,7 +32,7 @@ for my $certfile (@certlist) {
         if( is_member($entry->type(), ("CN") )) {
             ok($entry->is_printableString(), $entry->type() . ' SHOULD be printableString (3.2.3)');
         } else {
-            ok($entry->is_utf8string, $entry->type() . ' SHOULD be utf8string (3.2.3)');
+            ok($entry->is_utf8string(), $entry->type() . ' SHOULD be utf8string (3.2.3)');
         }
     }
 
@@ -68,7 +68,6 @@ for my $certfile (@certlist) {
     }
 
 	ok($subject_name->has_entry('O'), 'The use of at least one O attribute is recommended (3.2.4)');
-	
 	ok(not($subject_name->has_long_entry('serialNumber')), 'serialNumber MUST NOT be used in DN (3.2.5)');
     ok(not($subject_name->has_long_entry('emailAddress')), 'emailAddress SHOULD NOT be used in DN(3.2.6)');
     ok(not($subject_name->has_entry('UID')), 'DN does not have UID (3.2.7)');
@@ -92,15 +91,15 @@ for my $certfile (@certlist) {
 	ok($$exts{'extendedKeyUsage'}, 'EE certs SHOULD include extendedKeyUsage (3.3.3)');
 	$$exts{'extendedKeyUsage'} and 
 		ok(not($$exts{'extendedKeyUsage'}->critical()), "extendedKeyUsage MUST NOT be marked as critical (3.3.3)");
-	# If EKU and nsCertType are both included the cert purpose in both extensions must be equivalent
-	# 3.3.4 Either of EKU and nsCertType MUST be present to ensure correct operation of 
-	# grid and other software. If both are present the purposes expressed must be consistent.
+	# If extKeyUsage and nsCertType are both included the cert purpose in both extensions must be equivalent
+
+	# 3.3.4 Either of extKeyUsage and nsCertType MUST be present to ensure correct operation of grid and other software.
+	ok($$exts{'extendedKeyUsage'} or $$exts{'nsCertType'}, "Either of extendedKeyUsage and nsCertType MUST be present");
 
 	# nsCertType 3.3.5
 	# TODO consistency checking with extendedKeyUsage
 	ok(not($$exts{'nsCertType'}),"It is recommended not to use nsCertType in new certificates (3.3.5)");
-	$$exts{'nsCertType'} and 
-		ok(not($$exts{'nsCertType'}->critical(), "nsCertType MUST NOT be marked critical (3.3.5)"));
+	$$exts{'nsCertType'} and ok(not($$exts{'nsCertType'}->critical()), "nsCertType MUST NOT be marked critical (3.3.5)");
 
 	# nsPolicyURL, nsRevocationURL 3.3.6
 	foreach my $ext ("nsPolicyURL", "nsRevocationURL"){
@@ -110,29 +109,30 @@ for my $certfile (@certlist) {
 	
 	# nsComment 3.3.7
 	$$exts{'nsComment'} and 
-		ok(not($$exts{'nsComment'}->critical(), "nsComment MUST NOT be marked as critical (3.3.7)"));
+		ok(not($$exts{'nsComment'}->critical()), "nsComment MUST NOT be marked as critical (3.3.7)");
 
 	# cRLDistributionPoints 3.3.8
 	ok($$exts{'crlDistributionPoints'}, "cRLDistributionPoints MUST be present in end-entity certs (3.3.8)");
-	like($$exts{'crlDistributionPoints'}->to_string(), qr/http:(.+)/, "The cRLDistributionPoints extension must contain at least one http URI (3.3.8)");
+	$$exts{'crlDistributionPoints'} and 
+		like($$exts{'crlDistributionPoints'}->to_string(), qr/http:(.+)/, "The cRLDistributionPoints extension must contain at least one http URI (3.3.8)");
 	#crlDistributionPoints must return the CRL in DER encoded form
 
 	# authorityKeyIdentifier 3.3.9
-	$$exts{'authorityKeyIdentifier'} and ok(not($$exts{'authorityKeyIdentifier'}->critical(), 
-"authorityKeyIdentifier extension MUST NOT be marked as critical (3.3.9)"));
+	$$exts{'authorityKeyIdentifier'} and ok(not($$exts{'authorityKeyIdentifier'}->critical()), 
+"authorityKeyIdentifier extension MUST NOT be marked as critical (3.3.9)");
 
 	# subjectKeyIdentifier 3.3.10
-	$$exts{'subjectKeyIdentifier'} and ok(not($$exts{'subjectKeyIdentifier'}->critical(), "subjectKeyIdentifier MUST NOT be marked as critical (3.3.10)"));
+	$$exts{'subjectKeyIdentifier'} and ok(not($$exts{'subjectKeyIdentifier'}->critical()), "subjectKeyIdentifier MUST NOT be marked as critical (3.3.10)");
 
 	# certificatePolicies 3.3.11
 	ok($$exts{'certificatePolicies'}, "certificatePolicies extension MUST be present (3.3.11)");
-	ok(not($$exts{'certificatePolicies'}->critical(), "certificatePolicies MUST NOT be marked critical (3.3.11)"));
+	$$exts{'certificatePolicies'} and ok(not($$exts{'certificatePolicies'}->critical(), "certificatePolicies MUST NOT be marked critical (3.3.11)"));
 	# certificatePolicies MUST contain at least one policy OID. 
 
 	# subjectAlternativeName, issuerAlternativeName 3.3.12
 	# TODO subjectAlternativeName should be present for server certs and, if present, MUST contain 
 	# at least one FQDN in the dNSNAME attribute.
-	# TODO If an EE cert needs to contain an rfc822 email address,this rfc822 address SHOULD be included	# as an rfc822Name attribute in this extension only.
+	# TODO If an EE cert needs to contain an rfc822 email address,this rfc822 address SHOULD be included as an rfc822Name attribute in this extension only.
 
 	
 	# authorityInformationAccess 3.3.13
@@ -141,8 +141,7 @@ for my $certfile (@certlist) {
 	# The extension MUST NOT be included if the value points to an experimental or non-monitored 
 	# service, as this will impair operations as soon as an OCSP client is implemented and enabled 
 	# in the software.
-
-	ok(not($$exts{'authorityInformationAccess'}->critical()), 
+	$$exts{'authorityInformationAccess'} and ok(not($$exts{'authorityInformationAccess'}->critical()), 
 		   "authorityInformationAccess extension MUST NOT be marked critical (3.3.13)");
 
 }
