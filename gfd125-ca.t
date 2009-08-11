@@ -62,8 +62,8 @@ for my $certfile(@certlist) {
 	#ASN sequence MUST only contain SET's of length 1
     ok(not($subject_name->has_long_entry('serialNumber')), 'serialNumber SHOULD NOT be used in DN (2.3.3)');
     ok(not($subject_name->has_long_entry('emailAddress')), 'emailAddress SHOULD NOT be used in DN(2.3.4)');
-    ok(not($subject_name->has_entry('UID')), 'DN does not have UID (2.3.5)');
-    ok(not($subject_name->has_oid_entry('0.9.2342.19200300.100.1.1')), 'DN does not have userID (2.3.5)');
+    ok(not($subject_name->has_entry('UID')), 'DN MUST NOT have UID (2.3.5)');
+    ok(not($subject_name->has_oid_entry('0.9.2342.19200300.100.1.1')), 'DN MUST NOT have userID (2.3.5)');
     
     # Extensions in CA certificates 2.4
     my $exts = $x509->extensions_by_name();
@@ -77,7 +77,7 @@ for my $certfile(@certlist) {
     ok($$exts{'keyUsage'}, 'CA cert MUST include keyUsage (2.4.2)');
     $$exts{'keyUsage'} and ok($$exts{'keyUsage'}->is_critical(), 'keyUsage SHOULD be marked critical (2.4.2)');
 	# For a CA cert, keyCertSign must be set and crlSign must be set if the CA cert is used to directly issue crls
-	my %key_hash = $$exts{'keyUsage'}->hash_bit_string();
+	$$exts{'keyUsage'} and my %key_hash = $$exts{'keyUsage'}->hash_bit_string();
 	ok($key_hash{'Certificate Sign'}, 'For a CA cert, keyCertSign must be set');
 
 

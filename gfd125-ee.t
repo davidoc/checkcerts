@@ -15,7 +15,7 @@ for my $certfile (@certlist) {
     ok($x509->subject, "Subject: " . $x509->subject);
 
 	# Cert version, serial number and message digest 3.1
-	cmp_ok($x509->version, "==", 2, 'Version number must be "2" as per X509v3 (3.1)');
+	cmp_ok($x509->version, "==", 2, 'Version number MUST be "2" as per X509v3 (3.1)');
 	like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (3.1)');
     # serial number should be >0
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new EE certs (3.1)');
@@ -25,19 +25,17 @@ for my $certfile (@certlist) {
 	my $subject_name = $x509->subject_name();
     ok($subject_name->has_entry('CN'), 'End entity certificates MUST include CN in DN (3.2.3)');
 	
-    # Common Name component should be encoded as printableString,
-	# otherwise it should be encoded as UTF8String.
+    # Common Name component should be encoded as printableString, otherwise it should be encoded as UTF8String.
     my $entries = $subject_name->entries();
-    for my $entry (@$entries) {
-        if( is_member($entry->type(), ("CN") )) {
+		if(grep {$_ eq CN} @$entries){
             ok($entry->is_printableString(), $entry->type() . ' SHOULD be printableString (3.2.3)');
-        } else {
-            ok($entry->is_utf8string(), $entry->type() . ' SHOULD be utf8string (3.2.3)');
+            if(not($entry->is_printableString())){
+				ok($entry->is_utf8string(), $entry->type() . ' SHOULD be utf8string if not printableString (3.2.3)');
+			}
         }
-    }
 
 	# 3.2.3 For certificates issued to networked entities, typically the (primary) FQDN of the server
-	# is included in the commonName. For regular network entity certificates, there MUST NOT 
+	# is included in the commonName. TODO: For regular network entity certificates, there MUST NOT 
 	# be any additional characters in the commonName.
 	
 	# 3.2.4 If using DC, DCs should be at the start
@@ -59,10 +57,10 @@ for my $certfile (@certlist) {
 	if($subject_name->has_entry('C')){
 		my $loc = $subject_name->get_index_by_type('C');
         my $oldloc = $loc;
-        while($subject_name->has_entry('DC', $oldloc)) {
-            my $loc = $subject_name->get_index_by_type('DC', $oldloc);
+        while($subject_name->has_entry('C', $oldloc)) {
+            my $loc = $subject_name->get_index_by_type('C', $oldloc);
             next if $oldloc == $loc;
-            cmp_ok($loc, ">",  $oldloc, 'C must be used at most once (3.2.4)');
+            cmp_ok($loc, ">",  $oldloc, 'C MUST be used at most once (3.2.4)');
             $oldloc = $loc;
         }
     }
@@ -70,16 +68,17 @@ for my $certfile (@certlist) {
 	ok($subject_name->has_entry('O'), 'The use of at least one O attribute is recommended (3.2.4)');
 	ok(not($subject_name->has_long_entry('serialNumber')), 'serialNumber MUST NOT be used in DN (3.2.5)');
     ok(not($subject_name->has_long_entry('emailAddress')), 'emailAddress SHOULD NOT be used in DN(3.2.6)');
-    ok(not($subject_name->has_entry('UID')), 'DN does not have UID (3.2.7)');
-    ok(not($subject_name->has_oid_entry('0.9.2342.19200300.100.1.1')), 'DN does not have userID (3.2.7)');
+    ok(not($subject_name->has_entry('UID')), 'DN MUST NOT contain UID (3.2.7)');
+    ok(not($subject_name->has_oid_entry('0.9.2342.19200300.100.1.1')), 'DN MUST NOT have userID (3.2.7)');
 
 	# Extensions in end entity certificates 3.3
 	my $exts = $x509->extensions_by_name();
 	
 	# basicConstraints 3.3.1
+	ok(not($$exts{'basicConstaints'}), 'Inclusion of the basicConstraints extension is RECOMMENDED in EE certs');
     if($$exts{'basicConstraints'}){
-		ok(not($$exts{'basicConstraints'}->basicC("ca")), 'basicConstraints CA:FALSE 3.3.1');
-		is($$exts{'basicConstraints'}->basicC("pathlen"), 0, 'pathlenConstraint attribute must not be present(3.3.1)');
+		ok(not($$exts{'basicConstraints'}->basicC("ca")), 'basicConstraints CA:FALSE (3.3.1)');
+		is($$exts{'basicConstraints'}->basicC("pathlen"), 0, 'pathlenConstraint attribute MUST NOT be present(3.3.1)');
 		ok($$exts{'basicConstraints'}->critical(), 'basicConstraints MUST be marked critical (3.3.1)');
 	}
 	
@@ -97,14 +96,17 @@ for my $certfile (@certlist) {
 
     # If extKeyUsage and nsCertType are both included, the cert purpose in both extensions must be consistent.
 	# TODO Check for any other extKeyUsage/nsCertType values that need to be consistent (email + S/MIME possibly)
+    $$exts{'extendedKeyUsage'} and my @XKU_arr = $$exts{'extendedKeyUsage'}->extKeyUsage();
+	$$exts{'nsCertType'} and my %ns_hash = $$exts{'nsCertType'}->hash_bit_string();
+
 	if($$exts{'extendedKeyUsage'} and $$exts{'nsCertType'}){
-		my @XKU_arr = $$exts{'extendedKeyUsage'}->extKeyUsage();
-		my %ns_hash = $$exts{'nsCertType'}->hash_bit_string();
 		if (grep {$_ eq serverAuth} @XKU_arr){
-			ok($ns_hash{'SSL Server'}, "extendedKeyUsage contains the serverAuth attribute, nsCertType must contain SSL Server. Values for both must be consistent.");
+			ok($ns_hash{'SSL Server'}, 
+			   "extendedKeyUsage contains the serverAuth attribute, nsCertType must contain SSL Server. Values for both must be consistent.");
 		}
 		if (grep {$_ eq clientAuth} @XKU_arr){
-			ok($ns_hash{'SSL Client'}, "extendedKeyUsage contains the clientAuth attribute, nsCertType must contain SSL Client. Values for both must be consistent.");
+			ok($ns_hash{'SSL Client'}, 
+			   "extendedKeyUsage contains the clientAuth attribute, nsCertType must contain SSL Client. Values for both must be consistent.");
 		}
 	}
 
@@ -119,6 +121,7 @@ for my $certfile (@certlist) {
     }
 	
 	# nsComment 3.3.7
+	ok($$exts{'nsComment'}, "nsComment is not required in EE certificates.");
 	$$exts{'nsComment'} and 
 		ok(not($$exts{'nsComment'}->critical()), "nsComment MUST NOT be marked as critical (3.3.7)");
 
@@ -129,8 +132,8 @@ for my $certfile (@certlist) {
 	#crlDistributionPoints must return the CRL in DER encoded form
 
 	# authorityKeyIdentifier 3.3.9
-	$$exts{'authorityKeyIdentifier'} and ok(not($$exts{'authorityKeyIdentifier'}->critical()), 
-"authorityKeyIdentifier extension MUST NOT be marked as critical (3.3.9)");
+	$$exts{'authorityKeyIdentifier'} and 
+		ok(not($$exts{'authorityKeyIdentifier'}->critical()), "authorityKeyIdentifier extension MUST NOT be marked as critical (3.3.9)");
 
 	# subjectKeyIdentifier 3.3.10
 	$$exts{'subjectKeyIdentifier'} and ok(not($$exts{'subjectKeyIdentifier'}->critical()), "subjectKeyIdentifier MUST NOT be marked as critical (3.3.10)");
@@ -141,10 +144,13 @@ for my $certfile (@certlist) {
 	# certificatePolicies MUST contain at least one policy OID. 
 
 	# subjectAlternativeName, issuerAlternativeName 3.3.12
-	# TODO subjectAlternativeName should be present for server certs and, if present, MUST contain 
-	# at least one FQDN in the dNSNAME attribute.
-	# TODO If an EE cert needs to contain an rfc822 email address,this rfc822 address SHOULD be included as an rfc822Name attribute in this extension only.
-	
+	# Check either extKeyUsage or nsCertType for a value indicating that this is a server cert
+	($$exts{'extendedKeyUsage'} and grep {$_ eq serverAuth} @XKU_arr) or ($$exts{'nsCertType'} and $ns_hash{'SSL Server'}) 
+		and ok($$exts{'subjectAltName'}, "subjectAltName should be present for server certs");
+
+	$$exts{'subjectAltName'} and like($$exts{'subjectAltName'}->to_string, qr/DNS:(.+)/, 
+		"If present, subjectAltName MUST contain at least one FQDN in the dNSNAME attribute");
+
 	# authorityInformationAccess 3.3.13
 	# TODO It is recommended to include this extension if the issuer operates a production-quality OSCP service. 
 	# The extension MUST NOT be included if the value points to an experimental or non-monitored 
