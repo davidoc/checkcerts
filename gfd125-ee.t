@@ -19,7 +19,7 @@ for my $certfile (@certlist) {
 	like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (3.1)');
     # serial number should be >0
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new EE certs (3.1)');
-    like($x509->sig_alg_name, '/sha-?1/i', "Message digest SHOULD be SHA-1 (3.1)");
+    like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (3.1)');
 
 	# Subject Distinguished Names 3.2
 	my $subject_name = $x509->subject_name();
@@ -91,13 +91,24 @@ for my $certfile (@certlist) {
 	ok($$exts{'extendedKeyUsage'}, 'EE certs SHOULD include extendedKeyUsage (3.3.3)');
 	$$exts{'extendedKeyUsage'} and 
 		ok(not($$exts{'extendedKeyUsage'}->critical()), "extendedKeyUsage MUST NOT be marked as critical (3.3.3)");
-	# If extKeyUsage and nsCertType are both included the cert purpose in both extensions must be equivalent
 
 	# 3.3.4 Either of extKeyUsage and nsCertType MUST be present to ensure correct operation of grid and other software.
 	ok($$exts{'extendedKeyUsage'} or $$exts{'nsCertType'}, "Either of extendedKeyUsage and nsCertType MUST be present");
 
+    # If extKeyUsage and nsCertType are both included, the cert purpose in both extensions must be consistent.
+	# TODO Check for any other extKeyUsage/nsCertType values that need to be consistent (email + S/MIME possibly)
+	if($$exts{'extendedKeyUsage'} and $$exts{'nsCertType'}){
+		my @XKU_arr = $$exts{'extendedKeyUsage'}->extKeyUsage();
+		my %ns_hash = $$exts{'nsCertType'}->hash_bit_string();
+		if (grep {$_ eq serverAuth} @XKU_arr){
+			ok($ns_hash{'SSL Server'}, "extendedKeyUsage contains the serverAuth attribute, nsCertType must contain SSL Server. Values for both must be consistent.");
+		}
+		if (grep {$_ eq clientAuth} @XKU_arr){
+			ok($ns_hash{'SSL Client'}, "extendedKeyUsage contains the clientAuth attribute, nsCertType must contain SSL Client. Values for both must be consistent.");
+		}
+	}
+
 	# nsCertType 3.3.5
-	# TODO consistency checking with extendedKeyUsage
 	ok(not($$exts{'nsCertType'}),"It is recommended not to use nsCertType in new certificates (3.3.5)");
 	$$exts{'nsCertType'} and ok(not($$exts{'nsCertType'}->critical()), "nsCertType MUST NOT be marked critical (3.3.5)");
 
@@ -133,14 +144,11 @@ for my $certfile (@certlist) {
 	# TODO subjectAlternativeName should be present for server certs and, if present, MUST contain 
 	# at least one FQDN in the dNSNAME attribute.
 	# TODO If an EE cert needs to contain an rfc822 email address,this rfc822 address SHOULD be included as an rfc822Name attribute in this extension only.
-
 	
 	# authorityInformationAccess 3.3.13
-	# TODO It is recommended to include this extension if the issuer operates a production-quality OSCP
-	# service. 
+	# TODO It is recommended to include this extension if the issuer operates a production-quality OSCP service. 
 	# The extension MUST NOT be included if the value points to an experimental or non-monitored 
-	# service, as this will impair operations as soon as an OCSP client is implemented and enabled 
-	# in the software.
+	# service, as this will impair operations as soon as an OCSP client is implemented and enabled in the software.
 	$$exts{'authorityInformationAccess'} and ok(not($$exts{'authorityInformationAccess'}->critical()), 
 		   "authorityInformationAccess extension MUST NOT be marked critical (3.3.13)");
 

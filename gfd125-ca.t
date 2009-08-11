@@ -77,7 +77,7 @@ for my $certfile(@certlist) {
     ok($$exts{'keyUsage'}, 'CA cert MUST include keyUsage (2.4.2)');
     $$exts{'keyUsage'} and ok($$exts{'keyUsage'}->is_critical(), 'keyUsage SHOULD be marked critical (2.4.2)');
 	# For a CA cert, keyCertSign must be set and crlSign must be set if the CA cert is used to directly issue crls
-    my %key_hash = $$exts{'keyUsage'}->hash_bit_string();
+	my %key_hash = $$exts{'keyUsage'}->hash_bit_string();
 	ok($key_hash{'Certificate Sign'}, 'For a CA cert, keyCertSign must be set');
 
 
