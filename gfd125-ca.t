@@ -21,8 +21,8 @@ for my $certfile(@certlist) {
 
     # Serial & Message Digest 2.2
     like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (2.2)');	  
-    # serial number should be >0
-    # ok($x509->serial,'Serial number should be > 0');
+    ok($x509->serial,'Serial number should be > 0');
+	ok(($x509->serial eq abs($x509->serial)), 'Serial number should be > 0');
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new CA certs (2.2)');
     like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (2.2)');
 
@@ -114,7 +114,7 @@ for my $certfile(@certlist) {
     if($key_hash{'CRL sign'} and not($x509->subject eq $x509->issuer)){
 		ok($$exts{'crlDistributionPoints'}, 'Should be in any intermediate (not self-signed) CA certs that issue CRLs')
 	}
-	#For subordinate CAs, where CDP is present, it must contain at least one http URI
+	# For subordinate CAs, where CDP is present, it must contain at least one http URI
     $$exts{'crlDistributionPoints'} and not($x509->subject eq $x509->issuer) and 
 		like($$exts{'crlDistributionPoints'}->to_string(), qr/http:(.+)/, "In subordinate CAs, a CDP must contain at least one http URI");
 	

@@ -17,7 +17,8 @@ for my $certfile (@certlist) {
 	# Cert version, serial number and message digest 3.1
 	cmp_ok($x509->version, "==", 2, 'Version number MUST be "2" as per X509v3 (3.1)');
 	like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (3.1)');
-    # serial number should be >0
+    ok($x509->serial,'Serial number should not be 0');
+	ok(($x509->serial eq abs($x509->serial)), 'Serial number should be > 0');
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new EE certs (3.1)');
     like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (3.1)');
 
@@ -26,17 +27,27 @@ for my $certfile (@certlist) {
     ok($subject_name->has_entry('CN'), 'End entity certificates MUST include CN in DN (3.2.3)');
 	
     # Common Name component should be encoded as printableString, otherwise it should be encoded as UTF8String.
+	# All other components should be printableString.
     my $entries = $subject_name->entries();
-		if(grep {$_ eq CN} @$entries){
-            ok($entry->is_printableString(), $entry->type() . ' SHOULD be printableString (3.2.3)');
-            if(not($entry->is_printableString())){
-				ok($entry->is_utf8string(), $entry->type() . ' SHOULD be utf8string if not printableString (3.2.3)');
-			}
-        }
+    for my $entry (@$entries){
+        if( is_member($entry->type(), ("CN") )) {
+            ok($entry->is_printableString(), 'CN SHOULD be printableString (3.2.3)') or
+				ok($entry->is_utf8string(), 'CN SHOULD be utf8string if not printableString (3.2.3)');
+		}
+		else {
+			ok($entry->is_printableString(), $entry->type() . ' SHOULD be printableString (2.3)');
+		}
+	}
 
 	# 3.2.3 For certificates issued to networked entities, typically the (primary) FQDN of the server
 	# is included in the commonName. TODO: For regular network entity certificates, there MUST NOT 
 	# be any additional characters in the commonName.
+	for my $entry (@$entries){
+        if( is_member($entry->type(), "CN" )) {
+			like($entry->value, qr/host\/([a-z0-9]+\.)+[a-z0-9]+/, 
+				 "For regular network entity certificates, there MUST NOT be any additional characters in the commonName.");
+		}
+	}
 	
 	# 3.2.4 If using DC, DCs should be at the start
 	if($subject_name->has_entry('DC')) {
@@ -52,7 +63,19 @@ for my $certfile (@certlist) {
     }
 	
 	# 3.2.4 If the C (country) attribute is used, its value SHOULD contain the two-letter
-	# ISO3166 encoding of the country's name.
+	# ISO3166 encoding of the country's name. 
+	open(FILE, "countries.txt");
+	my @codes = <FILE>;
+	close(FILE);
+
+	for $entry (@$entries){
+		if($entry->type eq "C"){
+			$value = $entry->value;
+		}
+	}
+	ok((grep {$_ =~ /$value/} @codes), 
+	   "In the C attribute, the value SHOULD contain the two-letter ISO3166 encoding of the country's name (3.2.4)");		
+
 	# 3.2.4 Country must be used at most once
 	if($subject_name->has_entry('C')){
 		my $loc = $subject_name->get_index_by_type('C');
@@ -96,15 +119,15 @@ for my $certfile (@certlist) {
 
     # If extKeyUsage and nsCertType are both included, the cert purpose in both extensions must be consistent.
 	# TODO Check for any other extKeyUsage/nsCertType values that need to be consistent (email + S/MIME possibly)
-    $$exts{'extendedKeyUsage'} and my @XKU_arr = $$exts{'extendedKeyUsage'}->extKeyUsage();
+    $$exts{'extendedKeyUsage'} and my @extKU = $$exts{'extendedKeyUsage'}->extKeyUsage();
 	$$exts{'nsCertType'} and my %ns_hash = $$exts{'nsCertType'}->hash_bit_string();
 
 	if($$exts{'extendedKeyUsage'} and $$exts{'nsCertType'}){
-		if (grep {$_ eq serverAuth} @XKU_arr){
+		if (grep {$_ eq serverAuth} @extKU){
 			ok($ns_hash{'SSL Server'}, 
 			   "extendedKeyUsage contains the serverAuth attribute, nsCertType must contain SSL Server. Values for both must be consistent.");
 		}
-		if (grep {$_ eq clientAuth} @XKU_arr){
+		if (grep {$_ eq clientAuth} @extKU){
 			ok($ns_hash{'SSL Client'}, 
 			   "extendedKeyUsage contains the clientAuth attribute, nsCertType must contain SSL Client. Values for both must be consistent.");
 		}
@@ -145,17 +168,18 @@ for my $certfile (@certlist) {
 
 	# subjectAlternativeName, issuerAlternativeName 3.3.12
 	# Check either extKeyUsage or nsCertType for a value indicating that this is a server cert
-	($$exts{'extendedKeyUsage'} and grep {$_ eq serverAuth} @XKU_arr) or ($$exts{'nsCertType'} and $ns_hash{'SSL Server'}) 
+	($$exts{'extendedKeyUsage'} and grep {$_ eq serverAuth} @extKU) or ($$exts{'nsCertType'} and $ns_hash{'SSL Server'}) 
 		and ok($$exts{'subjectAltName'}, "subjectAltName should be present for server certs");
 
 	$$exts{'subjectAltName'} and like($$exts{'subjectAltName'}->to_string, qr/DNS:(.+)/, 
 		"If present, subjectAltName MUST contain at least one FQDN in the dNSNAME attribute");
 
 	# authorityInformationAccess 3.3.13
-	# TODO It is recommended to include this extension if the issuer operates a production-quality OSCP service. 
+	# TODO It is recommended to include this extension if the issuer operates a production-quality OSCP service.
 	# The extension MUST NOT be included if the value points to an experimental or non-monitored 
 	# service, as this will impair operations as soon as an OCSP client is implemented and enabled in the software.
-	$$exts{'authorityInformationAccess'} and ok(not($$exts{'authorityInformationAccess'}->critical()), 
+	# TODO: Create config file for each CA which includes all policies that can be checked.
+	$$exts{'authorityInfoAccess'} and ok(not($$exts{'authorityInfoAccess'}->critical()), 
 		   "authorityInformationAccess extension MUST NOT be marked critical (3.3.13)");
 
 }
