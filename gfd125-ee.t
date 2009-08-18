@@ -62,8 +62,7 @@ for my $certfile (@certlist) {
         }
     }
 	
-	# 3.2.4 If the C (country) attribute is used, its value SHOULD contain the two-letter
-	# ISO3166 encoding of the country's name. 
+	# 3.2.4 If the C (country) attribute is used, its value SHOULD contain the two-letter ISO3166 encoding of the country's name. 
 	open(FILE, "countries.txt");
 	my @codes = <FILE>;
 	close(FILE);
@@ -123,11 +122,11 @@ for my $certfile (@certlist) {
 	$$exts{'nsCertType'} and my %ns_hash = $$exts{'nsCertType'}->hash_bit_string();
 
 	if($$exts{'extendedKeyUsage'} and $$exts{'nsCertType'}){
-		if (grep {$_ eq serverAuth} @extKU){
+		if (grep {$_ eq 'serverAuth'} @extKU){
 			ok($ns_hash{'SSL Server'}, 
 			   "extendedKeyUsage contains the serverAuth attribute, nsCertType must contain SSL Server. Values for both must be consistent.");
 		}
-		if (grep {$_ eq clientAuth} @extKU){
+		if (grep {$_ eq 'clientAuth'} @extKU){
 			ok($ns_hash{'SSL Client'}, 
 			   "extendedKeyUsage contains the clientAuth attribute, nsCertType must contain SSL Client. Values for both must be consistent.");
 		}

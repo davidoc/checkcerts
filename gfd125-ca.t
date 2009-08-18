@@ -20,9 +20,9 @@ for my $certfile(@certlist) {
     cmp_ok($x509->version, '==', 2, 'Version value MUST be "2" per X.509v3 (2.1)');
 
     # Serial & Message Digest 2.2
-    like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (2.2)');	  
-    ok($x509->serial,'Serial number should be > 0');
-	ok(($x509->serial eq abs($x509->serial)), 'Serial number should be > 0');
+    like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (2.2)');
+	($x509->serial =~ /0+/) and ok($x509->serial+0,'Serial number should not be 0');
+	(abs($x509->serial) != 0) and ok(($x509->serial eq abs($x509->serial)), 'Serial number should be > 0');
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new CA certs (2.2)');
     like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (2.2)');
 
@@ -78,7 +78,7 @@ for my $certfile(@certlist) {
     $$exts{'keyUsage'} and ok($$exts{'keyUsage'}->is_critical(), 'keyUsage SHOULD be marked critical (2.4.2)');
 	# For a CA cert, keyCertSign must be set and crlSign must be set if the CA cert is used to directly issue crls
 	$$exts{'keyUsage'} and my %key_hash = $$exts{'keyUsage'}->hash_bit_string();
-	ok($key_hash{'Certificate Sign'}, 'For a CA cert, keyCertSign must be set');
+	ok($key_hash{'Certificate Sign'}, 'For a CA cert, keyCertSign must be set (2.4.2)');
 
 
     # extendedKeyUsage 2.4.3
@@ -97,12 +97,12 @@ for my $certfile(@certlist) {
 		$ns_hash{'SSL Client'} || $ns_hash{'S/MIME CA'} || $ns_hash{'Object Signing CA'} and
 			ok($key_hash{'Digital Signature'},
 				 "The SSL Client, S/MIME CA and Object Signing CA attributes in nsCertType require the Digital Signature attribute of keyUsage. 
-                  If used, nsCertType MUST be consistent with the keyUsage extension");
+                  If used, nsCertType MUST be consistent with the keyUsage extension (2.4.4)");
 		
 		$ns_hash{'SSL CA'} and
 			ok($key_hash{'Certificate Sign'}, 
 				 "The SSL CA attribute of nsCertType requires the keyCertSign attribute of keyUsage. 
-                  If used, nsCertType MUST be consistent with the keyUsage extension");
+                  If used, nsCertType MUST be consistent with the keyUsage extension (2.4.4)");
 	}
 	
     # certificatePolicies 2.4.5
@@ -112,31 +112,33 @@ for my $certfile(@certlist) {
     # crlDistributionPoints 2.4.6
     # Should be in any end-entity and intermediate (not self-signed) CA certs that issue CRLs.
     if($key_hash{'CRL sign'} and not($x509->subject eq $x509->issuer)){
-		ok($$exts{'crlDistributionPoints'}, 'Should be in any intermediate (not self-signed) CA certs that issue CRLs')
+		ok($$exts{'crlDistributionPoints'}, 'Should be in any intermediate (not self-signed) CA certs that issue CRLs (2.4.6)')
 	}
 	# For subordinate CAs, where CDP is present, it must contain at least one http URI
     $$exts{'crlDistributionPoints'} and not($x509->subject eq $x509->issuer) and 
-		like($$exts{'crlDistributionPoints'}->to_string(), qr/http:(.+)/, "In subordinate CAs, a CDP must contain at least one http URI");
+		like($$exts{'crlDistributionPoints'}->to_string(), qr/http:(.+)/, "In subordinate CAs, a CDP must contain at least one http URI (2.4.6)");
 	
 
     # Authority and Subject Key Identifier 2.4.7
 	if($$exts{'basicConstraints'}->basicC("ca")){
-		ok($$exts{'subjectKeyIdentifier'}, "Subject Key Identifier must be included in CA certs");
+		ok($$exts{'subjectKeyIdentifier'}, "Subject Key Identifier must be included in CA certs (2.4.7)");
 	}
 	
 	# TODO check properly if the cert is self-signed, rather than checking the issuer and subject
     # If cert is self-signed i.e. it's signed with its own key, the signature matches the public key (or the issuer==subject)
 	if(not($x509->subject eq $x509->issuer)){
-		ok($$exts{'authorityKeyIdentifier'}, "If the cert is not self-signed, an Authority Key Identifier must be included");
+		ok($$exts{'authorityKeyIdentifier'}, "If the cert is not self-signed, an Authority Key Identifier must be included (2.4.7)");
 	}
-	# the cert is self-signed, the authorityKeyIdentifier's keyid must be the same as subjectkeyIdentifier
+	# The cert is self-signed, the authorityKeyIdentifier's keyid must be the same as subjectkeyIdentifier 2.4.7
 	else{
-		my $subkeyid = $$exts{'subjectKeyIdentifier'}->to_string();
-		my $authkeyid = $$exts{'authorityKeyIdentifier'}->to_string();
-		like($authkeyid, qr/$subkeyid/, "AKID's keyid should be the same as SKID");
+		my $subkeyid = (join ":", map{sprintf "%X", ord($_)} split //, $$exts{'subjectKeyIdentifier'}->keyid_data());
+		my $authkeyid = (join ":", map{sprintf "%X", ord($_)} split //, $$exts{'authorityKeyIdentifier'}->keyid_data());;
+		like($authkeyid, qr/$subkeyid/, "The keyid of authorityKeyIdentifier should be the same as subjectKeyIdentifer (2.4.7)");
 	}
-	# TODO only the keyIdentifier attribute should be included, if any
+	# If AKID exists, only the keyIdentifier attribute should be included 2.4.7
+	$$exts{'authorityKeyIdentifier'} and 
+		ok($$exts{'authorityKeyIdentifier'}->auth_keyid, "If authorityKeyIdentifier exists, only the keyid attribute should be included (2.4.7)");
 	
 	# nameConstraints 2.4.8
-	ok(not($$exts{'nameConstraints'}), "The use of nameConstraints is not recommended");
+	ok(not($$exts{'nameConstraints'}), "The use of nameConstraints is not recommended (2.4.8)");
 }
