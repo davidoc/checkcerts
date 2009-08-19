@@ -17,8 +17,8 @@ for my $certfile (@certlist) {
 	# Cert version, serial number and message digest 3.1
 	cmp_ok($x509->version, "==", 2, 'Version number MUST be "2" as per X509v3 (3.1)');
 	like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (3.1)');
-    ok($x509->serial,'Serial number should not be 0');
-	ok(($x509->serial eq abs($x509->serial)), 'Serial number should be > 0');
+	like($x509->serial, qr/0+/,'Serial number should not be 0');
+	(abs($x509->serial+0) != 0) and ok(($x509->serial+0 eq abs($x509->serial+0)), 'Serial number should be > 0');
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new EE certs (3.1)');
     like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (3.1)');
 

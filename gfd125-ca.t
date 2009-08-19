@@ -21,8 +21,8 @@ for my $certfile(@certlist) {
 
     # Serial & Message Digest 2.2
     like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (2.2)');
-	($x509->serial =~ /0+/) and ok($x509->serial+0,'Serial number should not be 0');
-	(abs($x509->serial) != 0) and ok(($x509->serial eq abs($x509->serial)), 'Serial number should be > 0');
+    like($x509->serial, qr/0+/,'Serial number should not be 0');
+    (abs($x509->serial+0) != 0) and ok(($x509->serial+0 eq abs($x509->serial+0)), 'Serial number should be > 0');
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new CA certs (2.2)');
     like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (2.2)');
 
@@ -129,13 +129,13 @@ for my $certfile(@certlist) {
 	if(not($x509->subject eq $x509->issuer)){
 		ok($$exts{'authorityKeyIdentifier'}, "If the cert is not self-signed, an Authority Key Identifier must be included (2.4.7)");
 	}
-	# The cert is self-signed, the authorityKeyIdentifier's keyid must be the same as subjectkeyIdentifier 2.4.7
+	# The cert is self-signed, the authorityKeyIdentifier's keyid must be the same as subjectkeyIdentifier
 	else{
 		my $subkeyid = (join ":", map{sprintf "%X", ord($_)} split //, $$exts{'subjectKeyIdentifier'}->keyid_data());
 		my $authkeyid = (join ":", map{sprintf "%X", ord($_)} split //, $$exts{'authorityKeyIdentifier'}->keyid_data());;
 		like($authkeyid, qr/$subkeyid/, "The keyid of authorityKeyIdentifier should be the same as subjectKeyIdentifer (2.4.7)");
 	}
-	# If AKID exists, only the keyIdentifier attribute should be included 2.4.7
+	# If AKID exists, only the keyIdentifier attribute should be included
 	$$exts{'authorityKeyIdentifier'} and 
 		ok($$exts{'authorityKeyIdentifier'}->auth_keyid, "If authorityKeyIdentifier exists, only the keyid attribute should be included (2.4.7)");
 	
