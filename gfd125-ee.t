@@ -16,9 +16,10 @@ for my $certfile (@certlist) {
 
 	# Cert version, serial number and message digest 3.1
 	cmp_ok($x509->version, "==", 2, 'Version number MUST be "2" as per X509v3 (3.1)');
+	# Check if serial number changed on update
 	like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (3.1)');
 	like($x509->serial, qr/0+/,'Serial number should not be 0');
-	(abs($x509->serial+0) != 0) and ok(($x509->serial+0 eq abs($x509->serial+0)), 'Serial number should be > 0');
+	(abs($x509->serial+0) != 0) and ok(($x509->serial == abs($x509->serial)), 'Serial number should be > 0');
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new EE certs (3.1)');
     like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (3.1)');
 
@@ -107,6 +108,8 @@ for my $certfile (@certlist) {
 	# keyUsage 3.3.2
 	ok($$exts{'keyUsage'}, 'EE cert MUST include keyUsage (3.3.2)');
 	$$exts{'keyUsage'} and ok($$exts{'keyUsage'}->is_critical(), 'keyUsage MUST be marked as critical (3.3.2)');
+	$$exts{'keyUsage'} and my %key_hash = $$exts{'keyUsage'}->hash_bit_string() and 
+		ok(not($key_hash{'Non Repudiation'}, 'Non Repudiation should not be included in keyUsage');
 
 	# extendedKeyUsage 3.3.3
 	ok($$exts{'extendedKeyUsage'}, 'EE certs SHOULD include extendedKeyUsage (3.3.3)');
@@ -118,6 +121,8 @@ for my $certfile (@certlist) {
 
     # If extKeyUsage and nsCertType are both included, the cert purpose in both extensions must be consistent.
 	# TODO Check for any other extKeyUsage/nsCertType values that need to be consistent (email + S/MIME possibly)
+	# TODO Check for weird attributes.
+	# TODO No ServerAuth
     $$exts{'extendedKeyUsage'} and my @extKU = $$exts{'extendedKeyUsage'}->extKeyUsage();
 	$$exts{'nsCertType'} and my %ns_hash = $$exts{'nsCertType'}->hash_bit_string();
 
@@ -151,7 +156,7 @@ for my $certfile (@certlist) {
 	ok($$exts{'crlDistributionPoints'}, "cRLDistributionPoints MUST be present in end-entity certs (3.3.8)");
 	$$exts{'crlDistributionPoints'} and 
 		like($$exts{'crlDistributionPoints'}->to_string(), qr/http:(.+)/, "The cRLDistributionPoints extension must contain at least one http URI (3.3.8)");
-	#crlDistributionPoints must return the CRL in DER encoded form
+	# TODO crlDistributionPoints must return the CRL in DER encoded form
 
 	# authorityKeyIdentifier 3.3.9
 	$$exts{'authorityKeyIdentifier'} and 

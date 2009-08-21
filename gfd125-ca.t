@@ -20,9 +20,10 @@ for my $certfile(@certlist) {
     cmp_ok($x509->version, '==', 2, 'Version value MUST be "2" per X.509v3 (2.1)');
 
     # Serial & Message Digest 2.2
+    # Check if serial number changed on update
     like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (2.2)');
     like($x509->serial, qr/0+/,'Serial number should not be 0');
-    (abs($x509->serial+0) != 0) and ok(($x509->serial+0 eq abs($x509->serial+0)), 'Serial number should be > 0');
+    (abs($x509->serial+0) != 0) and ok(($x509->serial == abs($x509->serial)), 'Serial number should be > 0');
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new CA certs (2.2)');
     like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (2.2)');
 
@@ -76,9 +77,9 @@ for my $certfile(@certlist) {
 	# keyUsage 2.4.2
     ok($$exts{'keyUsage'}, 'CA cert MUST include keyUsage (2.4.2)');
     $$exts{'keyUsage'} and ok($$exts{'keyUsage'}->is_critical(), 'keyUsage SHOULD be marked critical (2.4.2)');
-	# For a CA cert, keyCertSign must be set and crlSign must be set if the CA cert is used to directly issue crls
-	$$exts{'keyUsage'} and my %key_hash = $$exts{'keyUsage'}->hash_bit_string();
-	ok($key_hash{'Certificate Sign'}, 'For a CA cert, keyCertSign must be set (2.4.2)');
+	# For a CA cert, keyCertSign must be set and TODO crlSign must be set if the CA cert is used to directly issue crls
+	$$exts{'keyUsage'} and my %key_hash = $$exts{'keyUsage'}->hash_bit_string() and 
+		ok($key_hash{'Certificate Sign'}, 'For a CA cert, keyCertSign must be set (2.4.2)');
 
 
     # extendedKeyUsage 2.4.3
