@@ -23,7 +23,7 @@ for my $certfile(@certlist) {
     # Check if serial number changed on update
     like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (2.2)');
     like($x509->serial, qr/0+/,'Serial number should not be 0');
-    (abs($x509->serial+0) != 0) and ok(($x509->serial == abs($x509->serial)), 'Serial number should be > 0');
+    (abs($x509->serial+0) != 0) and ok(($x509->serial+0 == abs($x509->serial+0)), 'Serial number should be > 0');
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new CA certs (2.2)');
     like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (2.2)');
 
