@@ -30,21 +30,22 @@
 # 
 # Check PEM certificates with weak RSA exponents
 # 
-# exponent=`openssl x509 -in $file -noout -pubkey | openssl rsa -pubin -text -noout | grep Exponent | awk '{print $2}'`
-# if [ "$exponent" -lt 65537 ]; then
-# 		echo "Weak exponent: $exponent in $file"
-# fi
-# 
 
 use CheckCertsTest;
 for my $certfile(@certlist) {
 	ok(my $x509 = Crypt::OpenSSL::X509->new_from_file($certfile), "new_from_file $certfile");
 	diag "\n\n * * * \nCert Subject: ", $x509->subject, "\n";
 
-	# Weak RSA exponents
-	cmp_ok(hex $x509->pub_exponent, "<=", 65537, "The public exponent should not be less than 65537");
+	# Check PEM certificates for (EC)DSA and MD5
 	
-
+	unlike($x509->pubkey_type(), '/dsa/', "Public key should not use DSA");
+	unlike($x509->sig_alg_name, '/md5/i', "MD5 should not be used.");
+	
+	
+	# Weak RSA exponents
+	cmp_ok(hex $x509->pub_exponent, "<=", 65537, "The public exponent should not be less than 65537.");
+	
+	
 
 
 

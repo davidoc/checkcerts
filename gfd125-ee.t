@@ -18,8 +18,8 @@ for my $certfile (@certlist) {
 	cmp_ok($x509->version, "==", 2, 'Version number MUST be "2" as per X509v3 (3.1)');
 	# Check if serial number changed on update
 	like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (3.1)');
-	like($x509->serial, qr/0+/,'Serial number should not be 0');
-	(abs($x509->serial+0) != 0) and ok(($x509->serial == abs($x509->serial)), 'Serial number should be > 0');
+	like($x509->serial, qr/^0+$/,'Serial number should not be 0') or
+		(abs($x509->serial+0) != 0) and ok(($x509->serial == abs($x509->serial)), 'Serial number should be > 0');
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new EE certs (3.1)');
     like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (3.1)');
 
@@ -108,8 +108,8 @@ for my $certfile (@certlist) {
 	# keyUsage 3.3.2
 	ok($$exts{'keyUsage'}, 'EE cert MUST include keyUsage (3.3.2)');
 	$$exts{'keyUsage'} and ok($$exts{'keyUsage'}->is_critical(), 'keyUsage MUST be marked as critical (3.3.2)');
-	$$exts{'keyUsage'} and my %key_hash = $$exts{'keyUsage'}->hash_bit_string() and 
-		ok(not($key_hash{'Non Repudiation'}, 'Non Repudiation should not be included in keyUsage');
+	$$exts{'keyUsage'} and my %key_hash = $$exts{'keyUsage'}->hash_bit_string();
+	$$exts{'keyUsage'} and ok(not($key_hash{'Non Repudiation'}), 'Non Repudiation should not be included in keyUsage');
 
 	# extendedKeyUsage 3.3.3
 	ok($$exts{'extendedKeyUsage'}, 'EE certs SHOULD include extendedKeyUsage (3.3.3)');
