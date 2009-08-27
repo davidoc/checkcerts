@@ -18,8 +18,8 @@ for my $certfile (@certlist) {
 	cmp_ok($x509->version, "==", 2, 'Version number MUST be "2" as per X509v3 (3.1)');
 	# Check if serial number changed on update
 	like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (3.1)');
-	like($x509->serial, qr/^0+$/,'Serial number should not be 0') or
-		(abs($x509->serial+0) != 0) and ok(($x509->serial == abs($x509->serial)), 'Serial number should be > 0');
+	unlike($x509->serial, qr/^0+$/,'Serial number should not be 0');
+	not($x509->serial =~ qr/[a-fA-F]/) and ok(($x509->serial+0 == abs($x509->serial)), 'Serial number should be > 0');
     unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new EE certs (3.1)');
     like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (3.1)');
 
@@ -46,7 +46,7 @@ for my $certfile (@certlist) {
 	for my $entry (@$entries){
         if( is_member($entry->type(), "CN" )) {
 			like($entry->value, qr/host\/([a-z0-9]+\.)+[a-z0-9]+/, 
-				 "For regular network entity certificates, there MUST NOT be any additional characters in the commonName.");
+				 "For regular network entity certificates, there MUST NOT be any additional characters in the DN commonName.");
 		}
 	}
 	
@@ -64,7 +64,7 @@ for my $certfile (@certlist) {
     }
 	
 	# 3.2.4 If the C (country) attribute is used, its value SHOULD contain the two-letter ISO3166 encoding of the country's name. 
-	open(FILE, "countries.txt");
+	open(FILE, "countries");
 	my @codes = <FILE>;
 	close(FILE);
 
@@ -117,7 +117,7 @@ for my $certfile (@certlist) {
 		ok(not($$exts{'extendedKeyUsage'}->critical()), "extendedKeyUsage MUST NOT be marked as critical (3.3.3)");
 
 	# 3.3.4 Either of extKeyUsage and nsCertType MUST be present to ensure correct operation of grid and other software.
-	ok($$exts{'extendedKeyUsage'} or $$exts{'nsCertType'}, "Either of extendedKeyUsage and nsCertType MUST be present");
+	ok(($$exts{'extendedKeyUsage'} or $$exts{'nsCertType'}), "Either of extendedKeyUsage and nsCertType MUST be present");
 
     # If extKeyUsage and nsCertType are both included, the cert purpose in both extensions must be consistent.
 	# TODO Check for any other extKeyUsage/nsCertType values that need to be consistent (email + S/MIME possibly)
