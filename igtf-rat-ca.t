@@ -17,17 +17,6 @@
 # 
 # Check PEM certificates for Debian keys
 # 
-# tag=`openssl x509 -noout -modulus -in $file | sha1sum | cut -d ' ' -f 1 | cut -c21-41`;
-# serial=`basename $file .pem
-# if [ `fgrep -c $tag /tmp/blacklist.RSA-1024` \
-#		-ne 0 -o \
-#		`fgrep -c tag /tmp/blacklist.RSA-2048 
-#		-ne 0 ] ; then
-#	dn=`openssl x509 -noout -subject -in $file | sed -e 's/subject= //'`;
-#	caid=`awk '/Tag:/ {print $NF}' $f`;
-#	echo "$serial $caid $dn" ;
-# fi;
-# 
 # Check PEM certificates with weak RSA exponents
 # 
 
@@ -41,6 +30,15 @@ for my $certfile(@certlist) {
 	unlike($x509->pubkey_type(), '/dsa/', "Public key should not use DSA");
 	unlike($x509->sig_alg_name, '/md5/i', "MD5 should not be used.");
 	
+	# Check PEM CRLs for MD5
+	
+	# Check for Debian Keys
+	my $blacklist = "/usr/share/openssl-blacklist/";
+	my $mod = $x509->modulus();
+	my $tag=`echo $mod | sha1sum | cut -d ' ' -f 1 | cut -c21-41`;
+	ok(not(`fgrep '$tag' $blacklist/"blacklist.RSA-1024"`), "$certfile has blacklisted modulus checksum") or
+		ok(not(`grep '$tag' $blacklist/"blacklist.RSA-2048"`), "$certfile has blacklisted modulus checksum");
+
 	
 	# Weak RSA exponents
 	cmp_ok(hex $x509->pub_exponent, "<=", 65537, "The public exponent should not be less than 65537.");
