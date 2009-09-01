@@ -64,7 +64,7 @@ for my $certfile (@certlist) {
     }
 	
 	# 3.2.4 If the C (country) attribute is used, its value SHOULD contain the two-letter ISO3166 encoding of the country's name. 
-	open(FILE, "countries");
+	open(FILE, "countries.lst");
 	my @codes = <FILE>;
 	close(FILE);
 
@@ -80,6 +80,7 @@ for my $certfile (@certlist) {
 	if($subject_name->has_entry('C')){
 		my $loc = $subject_name->get_index_by_type('C');
         my $oldloc = $loc;
+
         while($subject_name->has_entry('C', $oldloc)) {
             my $loc = $subject_name->get_index_by_type('C', $oldloc);
             next if $oldloc == $loc;
@@ -120,9 +121,6 @@ for my $certfile (@certlist) {
 	ok(($$exts{'extendedKeyUsage'} or $$exts{'nsCertType'}), "Either of extendedKeyUsage and nsCertType MUST be present");
 
     # If extKeyUsage and nsCertType are both included, the cert purpose in both extensions must be consistent.
-	# TODO Check for any other extKeyUsage/nsCertType values that need to be consistent (email + S/MIME possibly)
-	# TODO Check for weird attributes.
-	# TODO No ServerAuth
     $$exts{'extendedKeyUsage'} and my @extKU = $$exts{'extendedKeyUsage'}->extKeyUsage();
 	$$exts{'nsCertType'} and my %ns_hash = $$exts{'nsCertType'}->hash_bit_string();
 

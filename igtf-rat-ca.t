@@ -11,10 +11,6 @@
 # echo "$file matches" 
 # fi
 # 
-# Check PEM CRLs for MD5
-# 
-# openssl crl -text -in $file | egrep -H 'Algorithm: md5' > /dev/null 2>&1;
-# 
 # Check PEM certificates for Debian keys
 # 
 # Check PEM certificates with weak RSA exponents
@@ -29,8 +25,6 @@ for my $certfile(@certlist) {
 	
 	unlike($x509->pubkey_type(), '/dsa/', "Public key should not use DSA");
 	unlike($x509->sig_alg_name, '/md5/i', "MD5 should not be used.");
-	
-	# Check PEM CRLs for MD5
 	
 	# Check for Debian Keys
 	my $blacklist = "/usr/share/openssl-blacklist/";

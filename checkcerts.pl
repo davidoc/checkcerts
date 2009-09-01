@@ -177,8 +177,10 @@ Check all in a single test run to give aggregate result:
 
 =head1 NOTES
 
-The supplied test suite C<gfd125-ca.t> uses a pre-release version of
+The supplied test suites C<gfd125-ca.t> and C<gfd125-ee.t> use a pre-release version of
 Crypt::OpenSSL::X509 that is not yet widely distributed.  It can be downloaded
-from I<http://github.com/davidoc/perl-crypt-openssl-x509/tree/master>.
+from I<http://github.com/davidoc/perl-crypt-openssl-x509/tree/master>. A more complete 
+version allowing extension tests is available 
+from I<http://github.com/LouiseD/perl-crypt-openssl-x509/tree/master>.
 
 =cut
