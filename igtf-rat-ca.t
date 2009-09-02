@@ -4,17 +4,6 @@
 # Check new certificate requests for known weak Debian OpenSSL keys
 # Verify new certificates and CRLs are not issued using MD5
 # 
-# Check PEM certificates for (EC)DSA and MD5
-# 
-# openssl x509 -text -in $file | egrep -H 'DSA-Parameters|ECDSA-Parameters|DSA Public Key|Algorithm: md5' > /dev/null 2>&1;
-# if [$? = "0"]; then 
-# echo "$file matches" 
-# fi
-# 
-# Check PEM certificates for Debian keys
-# 
-# Check PEM certificates with weak RSA exponents
-# 
 
 use CheckCertsTest;
 for my $certfile(@certlist) {
@@ -32,13 +21,12 @@ for my $certfile(@certlist) {
 	my $tag=`echo $mod | sha1sum | cut -d ' ' -f 1 | cut -c21-41`;
 	ok(not(`fgrep '$tag' $blacklist/"blacklist.RSA-1024"`), "$certfile has blacklisted modulus checksum") or
 		ok(not(`grep '$tag' $blacklist/"blacklist.RSA-2048"`), "$certfile has blacklisted modulus checksum");
-
 	
 	# Weak RSA exponents
 	cmp_ok(hex $x509->pub_exponent, "<=", 65537, "The public exponent should not be less than 65537.");
 	
 	
-
+}
 
 
 
