@@ -165,7 +165,7 @@ for my $certfile (@certlist) {
 
 	# certificatePolicies 3.3.11
 	ok($$exts{'certificatePolicies'}, "certificatePolicies extension MUST be present (3.3.11)");
-	$$exts{'certificatePolicies'} and ok(not($$exts{'certificatePolicies'}->critical(), "certificatePolicies MUST NOT be marked critical (3.3.11)"));
+	$$exts{'certificatePolicies'} and ok(not($$exts{'certificatePolicies'}->critical(), "certificatePolicies SHOULD NOT be marked critical (3.3.11)"));
 	# certificatePolicies MUST contain at least one policy OID. 
 
 	# subjectAlternativeName, issuerAlternativeName 3.3.12

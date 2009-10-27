@@ -33,12 +33,15 @@ for my $certfile (@certlist) {
     for my $entry (@$entries){
         if( is_member($entry->type(), ("CN") )) {
             ok($entry->is_printableString(), 'CN SHOULD be printableString (3.2.3)') or
-				ok($entry->is_utf8string(), 'CN SHOULD be utf8string if not printableString (3.2.3)');
-		}
-		else {
-			ok($entry->is_printableString(), $entry->type() . ' SHOULD be printableString (2.3)');
-		}
-	}
+            ok($entry->is_utf8string(), 'CN SHOULD be utf8string if not printableString (3.2.3)');
+        }
+        elsif( is_member($entry->type(), ("DC","emailAddress") )) {    
+            ok($entry->is_ia5string(), $entry->type() . ' SHOULD be ia5String (!2.3) (It is actually: ' . $entry->encoding . ')');
+        }
+        else {
+            ok($entry->is_printableString(), $entry->type() . ' SHOULD be printableString (2.3)');
+        }
+    }
 
 	# 3.2.3 For certificates issued to networked entities, typically the (primary) FQDN of the server
 	# is included in the commonName. TODO: For regular network entity certificates, there MUST NOT 

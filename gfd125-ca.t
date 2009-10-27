@@ -13,7 +13,7 @@ use CheckCertsTest;
 
 for my $certfile(@certlist) {
     ok(my $x509 = Crypt::OpenSSL::X509->new_from_file($certfile), "new_from_file $certfile");
-    diag "\n\n * * * \nCert Subject: ", $x509->subject, "\n";
+    diag "\n\n * * * \nCert Subject: ", $x509->subject, "\n", "Cert file: ", $certfile, "\n";
     ok($x509->subject, "Subject: " . $x509->subject);
 
     # Cert version 2.1
@@ -128,9 +128,12 @@ for my $certfile(@certlist) {
 	}
 	# The cert is self-signed, the authorityKeyIdentifier's keyid must be the same as subjectkeyIdentifier
 	else{
-		my $subkeyid = (join ":", map{sprintf "%X", ord($_)} split //, $$exts{'subjectKeyIdentifier'}->keyid_data());
-		my $authkeyid = (join ":", map{sprintf "%X", ord($_)} split //, $$exts{'authorityKeyIdentifier'}->keyid_data());;
+            my ($subkeyid, $authkeyid);
+	$$exts{'subjectKeyIdentifier'} and	$subkeyid = (join ":", map{sprintf "%X", ord($_)} split //, $$exts{'subjectKeyIdentifier'}->keyid_data());
+	$$exts{'authorityKeyIdentifier'} and	$authkeyid = (join ":", map{sprintf "%X", ord($_)} split //, $$exts{'authorityKeyIdentifier'}->keyid_data());;
+        if($subkeyid and $authkeyid) {
 		like($authkeyid, qr/$subkeyid/, "The keyid of authorityKeyIdentifier should be the same as subjectKeyIdentifer (2.4.7)");
+            }
 	}
 	# If AKID exists, only the keyIdentifier attribute should be included
 	$$exts{'authorityKeyIdentifier'} and 
