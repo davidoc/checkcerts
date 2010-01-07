@@ -36,9 +36,9 @@ for my $certfile(@certlist) {
     my $entries = $subject_name->entries();
     for my $entry (@$entries) {
         if( is_member($entry->type(), ("DC","emailAddress") )) {    
-            ok($entry->is_ia5string(), $entry->type() . ' SHOULD be ia5String (!2.3) (It is actually: ' . $entry->encoding . ')');
+            ok($entry->is_ia5string(), $entry->type() . ' SHOULD be ia5String (2.3) (It is actually: ' . $entry->encoding . ')');
         } else {
-            ok($entry->is_printableString(), $entry->type() . ' SHOULD be printableString (2.3) (It is actually: ' . $entry->encoding . ')');
+            ok($entry->is_printableString() or $entry->is_utf8string(), $entry->type() . ' SHOULD be printableString or, if not, utf8string (2.3) (It is actually: ' . $entry->encoding . ')');
         }
     }
 
