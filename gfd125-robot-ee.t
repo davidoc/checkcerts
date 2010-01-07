@@ -143,7 +143,7 @@ for my $certfile (@certlist) {
     }
 	
 	# nsComment 3.3.7
-	ok($$exts{'nsComment'}, "nsComment is not required in EE certificates.");
+	ok(not($$exts{'nsComment'}), "nsComment is not required in EE certificates.");
 	$$exts{'nsComment'} and 
 		ok(not($$exts{'nsComment'}->critical()), "nsComment MUST NOT be marked as critical (3.3.7)");
 

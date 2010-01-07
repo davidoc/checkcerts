@@ -143,13 +143,13 @@ for my $certfile (@certlist) {
 	$$exts{'nsCertType'} and ok(not($$exts{'nsCertType'}->critical()), "nsCertType MUST NOT be marked critical (3.3.5)");
 
 	# nsPolicyURL, nsRevocationURL 3.3.6
-	foreach my $ext ("nsPolicyURL", "nsRevocationURL"){
-        ok(not($$exts{$ext}), "$ext extension is not required in EE certs (3.3.6)");
-        $$exts{$ext} and ok(!($$exts{$ext}->critical()), "$ext MUST NOT be marked critical (3.3.6)");
-    }
+        foreach my $ext ("nsPolicyURL", "nsRevocationURL"){
+            ok(not($$exts{$ext}), "$ext extension is not required in EE certs (3.3.6)");
+            $$exts{$ext} and ok(!($$exts{$ext}->critical()), "$ext MUST NOT be marked critical (3.3.6)");
+        }
 	
 	# nsComment 3.3.7
-	ok($$exts{'nsComment'}, "nsComment is not required in EE certificates.");
+	ok(not($$exts{'nsComment'}), "nsComment is not required in EE certificates.");
 	$$exts{'nsComment'} and 
 		ok(not($$exts{'nsComment'}->critical()), "nsComment MUST NOT be marked as critical (3.3.7)");
 
