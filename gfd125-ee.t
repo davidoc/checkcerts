@@ -48,7 +48,7 @@ for my $certfile (@certlist) {
 	# be any additional characters in the commonName.
 	for my $entry (@$entries){
         if( is_member($entry->type(), "CN" )) {
-			like($entry->value, qr/host\/([a-z0-9]+\.)+[a-z0-9]+/, 
+			like($entry->value, qr/([a-z]+\/)?([a-z0-9]+\.)+[a-z0-9]+/, 
 				 "For regular network entity certificates, there MUST NOT be any additional characters in the DN commonName.");
 		}
 	}
