@@ -6,3 +6,6 @@ Limitations:
 From EU Grid PMA meeting - 2009-01:
 - Make some tests (SHOULDs, other ambiguous or harmless tests) into warnings
 - Create a Crypt::OpenSSL::Req module
+
+Other:
+- Better mechanism for defining/including common tests

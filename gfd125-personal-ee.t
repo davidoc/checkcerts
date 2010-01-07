@@ -1,7 +1,6 @@
 ##
 ## Test Suite for End Entity Personal Certificates under GFD-C.125 "Grid Certificate Profile"
 ## 
-## 2009-07-29
 ## 
 ## TODO: implementation not complete
 ##

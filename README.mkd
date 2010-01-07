@@ -2,7 +2,7 @@ checkcerts
 ===========
 
 David O'Callaghan <david.ocallaghan@cs.tcd.ie>
-2009-06-03
+2010-01-07
 
 
 Introduction
@@ -42,4 +42,4 @@ To try it out, run:
 
     ./checkcerts.pl -t gfd125-ca.t -c cacert.pem
 
-You should expect to see 2 failures.
+You should expect to see 3 failures.
