@@ -67,10 +67,10 @@ for my $certfile (@certlist) {
     for $entry (@$entries){
         if($entry->type eq "C"){
             $value = $entry->value;
+            ok((grep {$_ =~ /$value/} @codes), 
+                "In the C attribute, the value SHOULD contain the two-letter ISO3166 encoding of the country's name (3.2.4)");        
         }
     }
-    ok((grep {$_ =~ /$value/} @codes), 
-        "In the C attribute, the value SHOULD contain the two-letter ISO3166 encoding of the country's name (3.2.4)");        
 
     # 3.2.4 Country must be used at most once
     if($subject_name->has_entry('C')){
@@ -150,7 +150,13 @@ for my $certfile (@certlist) {
     ok($$exts{'crlDistributionPoints'}, "cRLDistributionPoints MUST be present in end-entity certs (3.3.8)");
     $$exts{'crlDistributionPoints'} and 
     like($$exts{'crlDistributionPoints'}->to_string(), qr/http:(.+)/, "The cRLDistributionPoints extension must contain at least one http URI (3.3.8)");
-    # TODO crlDistributionPoints must return the CRL in DER encoded form
+
+    TODO: {
+        #ok( ($$exts{'crlDistributionPoints'} and Crypt::OpenSSL::X509::CRL->new_from_url($$exts{'crlDistributionPoints'}->to_string())),
+        $cdpuri = $$exts{'crlDistributionPoints'}->to_string();
+        fail(
+            "CHECK MANUALLY: crlDistributionPoints URI ($cdpuri) MUST return the CRL in DER encoded form (3.3.8)");
+    }
 
     # authorityKeyIdentifier 3.3.9
     $$exts{'authorityKeyIdentifier'} and 
@@ -161,7 +167,7 @@ for my $certfile (@certlist) {
 
     # certificatePolicies 3.3.11
     ok($$exts{'certificatePolicies'}, "certificatePolicies extension MUST be present (3.3.11)");
-    $$exts{'certificatePolicies'} and ok(not($$exts{'certificatePolicies'}->critical(), "certificatePolicies SHOULD NOT be marked critical (3.3.11)"));
+    $$exts{'certificatePolicies'} and ok(not($$exts{'certificatePolicies'}->critical()), "certificatePolicies SHOULD NOT be marked critical (3.3.11)");
     # certificatePolicies MUST contain at least one policy OID. 
 
     # subjectAlternativeName, issuerAlternativeName 3.3.12

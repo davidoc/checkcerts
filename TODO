@@ -9,3 +9,9 @@ From EU Grid PMA meeting - 2009-01:
 
 Other:
 - Better mechanism for defining/including common tests
+- Not clear if "TODO" tests are working. 
+
+Using the spreadsheet of implemented tets:
+- Add TODO tests
+- Add manual test placeholders
+
