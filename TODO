@@ -10,8 +10,11 @@ From EU Grid PMA meeting - 2009-01:
 Other:
 - Better mechanism for defining/including common tests
 - Not clear if "TODO" tests are working. 
+- Output TAP to CSV?
+- Ensure that same number of tests are always run (e.g. include "pass" tests to balance conditional tests)
 
 Using the spreadsheet of implemented tets:
 - Add TODO tests
+- Add identifiers to all test outputs
 - Add manual test placeholders
-
+- Draft GFD-C.125bis ?

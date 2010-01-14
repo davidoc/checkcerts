@@ -9,38 +9,61 @@
 use CheckCertsTest;
 
 for my $certfile(@certlist) {
-    ok(my $x509 = Crypt::OpenSSL::X509->new_from_file($certfile), "new_from_file $certfile");
+    ok(my $x509 = Crypt::OpenSSL::X509->new_from_file($certfile), "(Info) new_from_file $certfile");
     diag "\n\n * * * \nCert Subject: ", $x509->subject, "\n", "Cert file: ", $certfile, "\n";
-    ok($x509->subject, "Subject: " . $x509->subject);
+    ok($x509->subject, "(Info) Subject: " . $x509->subject);
 
     # Cert version 2.1
-    cmp_ok($x509->version, '==', 2, 'Version value MUST be "2" per X.509v3 (2.1)');
+    cmp_ok($x509->version, '==', 2, '(2.1) Version value MUST be "2" per X.509v3');
 
     # Serial & Message Digest 2.2
     # Check if serial number changed on update
-    like($x509->serial, qr/[a-fA-F0-9:]+/, 'Serial  number format (2.2)');
-    unlike($x509->serial, qr/^0+$/,'Serial number should not be 0') or
-    (abs($x509->serial+0) != 0) and ok(($x509->serial+0 == abs($x509->serial+0)), 'Serial number should be > 0');
-    unlike($x509->sig_alg_name, '/md5/i', 'Message digest MUST NOT be MD5 in new CA certs (2.2)');
-    like($x509->sig_alg_name, '/sha-?1/i', 'Message digest SHOULD be SHA-1 (2.2)');
+    SKIP: {
+        fail('(2.2a Manual Check) Serial number SHOULD be unique among all CA certs representing the CA');
+    }
+    unlike($x509->serial, qr/^0+$/,'(2.2xa) Serial number should not be 0') or
+    (abs($x509->serial+0) != 0) and ok(($x509->serial+0 == abs($x509->serial+0)), '(2.2xb) Serial number should be > 0');
+    like($x509->serial, qr/[a-fA-F0-9:]+/, '(2.2xc) Serial  number format');
+    SKIP: {
+        fail('(2.2b Manual Check) If EE certs contain authorityKeyIdentifier including CA serial, serial SHOULD remain the same on re-issuing CA certificate.');
+        fail('(2.2c EE Check) CA serial in EE authorityKeyIdentifier is NOT RECOMMENDED.');
+    }
+    unlike($x509->sig_alg_name, '/md5/i', '(2.2d) Message digest MUST NOT be MD5 in new CA certs');
+    like($x509->sig_alg_name, '/sha-?1/i', '(2.2e) Message digest SHOULD be SHA-1 ');
 
     # Issuer and Subject names 2.3
     my $subject_name = $x509->subject_name();
-    ok($subject_name->has_entry('CN'), 'CA certificate SHOULD have CN in DN (2.3.1)');
-
-    # Name components should be printableString
-    # DC and emailAddress should be ia5String
-    my $entries = $subject_name->entries();
-    for my $entry (@$entries) {
-        if( is_member($entry->type(), ("DC","emailAddress") )) {    
-            ok($entry->is_ia5string(), $entry->type() . ' SHOULD be ia5String (2.3) (It is actually: ' . $entry->encoding . ')');
-        } else {
-            ok($entry->is_printableString() or $entry->is_utf8string(), $entry->type() . ' SHOULD be printableString or, if not, utf8string (2.3) (It is actually: ' . $entry->encoding . ')');
-        }
+    TODO: {
+        fail("(2.3c TODO) the ASN.1 SEQUENCE MUST only contain SETs of length 1");
+        fail("(2.3d TODO) All RDNs MUST be compliant with RFC 4630");
     }
 
     #2.3.1 CN should be descriptive
-    #2.3.2 should consist of "DC", "C", "ST", "L", "O", "OU" and "CN"
+    ok($subject_name->has_entry('CN'), '(2.3.1) CA certificate SHOULD have CN in DN');
+    SKIP: {
+        fail("(2.3.1a Manual Check) CA certificate CN SHOULD be an explicit string distinguishing the authority's name");
+    }
+
+    my $entries = $subject_name->entries();
+    for my $entry (@$entries) {
+        #2.3.2 should consist of "DC", "C", "ST", "L", "O", "OU" and "CN"
+        ok(is_member($entry->type(), ("DC","C","ST","L","O","OU","CN")), "(2.3.2) DN SHOULD NOT contain entries other than DC, C, ST, L, O, OU, CN (Type: " . $entry->type() . ")");
+        if( is_member($entry->type(), ("DC","emailAddress") )) {    
+            # DC and emailAddress should be ia5String
+            ok($entry->is_ia5string(), "(3.2.4) " . $entry->type() . ' SHOULD be ia5String (It is actually: ' . $entry->encoding . ')');
+        } else {
+            # Name components should be printableString
+            ok(($entry->is_printableString() or $entry->is_utf8string()), "(2.3) " . $entry->type() . ' SHOULD be printableString or, if not, utf8string (It is actually: ' . $entry->encoding . ')');
+            TODO: {
+                #isa($x509->subject, "ASN1_SEQUENCE", 'DN is ASN1 SEQUENCE 2.3');
+                #ASN sequence MUST only contain SET's of length 1
+                fail("(2.3f TODO) RDNs encoded in UTF8String MUST NOT contain characters that cannot be expressed in printable 7-bit ASCII");
+            }
+        }
+    }
+
+
+
     #2.3.2 if using DC, DCs should be at start
     if($subject_name->has_entry('DC')) {
         my $loc = $subject_name->get_index_by_type('DC');
@@ -54,12 +77,13 @@ for my $certfile(@certlist) {
         }
     }
 
-    #2.3.2 DN should have O
+    ok($subject_name->has_entry('O'), '(2.3.2d) DN SHOULD contain O');
     #2.3.2 C should match issuer
-    #isa($x509->subject, "ASN1_SEQUENCE", 'DN is ASN1 SEQUENCE 2.3');
-    #ASN sequence MUST only contain SET's of length 1
-    ok(not($subject_name->has_long_entry('serialNumber')), 'serialNumber SHOULD NOT be used in DN (2.3.3)');
-    ok(not($subject_name->has_long_entry('emailAddress')), 'emailAddress SHOULD NOT be used in DN(2.3.4)');
+    SKIP: {
+        fail('(2.3.2e Manual Check) if CN contains C it should match the Issuer country');
+    }
+    ok(not($subject_name->has_long_entry('serialNumber')), '(2.3.3) serialNumber MUST NOT be used in DN)');
+    ok(not($subject_name->has_long_entry('emailAddress')), '(2.3.4) emailAddress SHOULD NOT be used in DN(2.3.4)');
     ok(not($subject_name->has_entry('UID')), 'DN MUST NOT have UID (2.3.5)');
     ok(not($subject_name->has_oid_entry('0.9.2342.19200300.100.1.1')), 'DN MUST NOT have userID (2.3.5)');
 
