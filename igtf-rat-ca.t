@@ -25,7 +25,9 @@ for my $certfile(@certlist) {
 	# Weak RSA exponents
 	cmp_ok(hex $x509->pub_exponent, "<=", 65537, "The public exponent should not be less than 65537.");
 	
-	
+        # Check for NUL chars	
+        TODO: {
+        }
 }
 
 
