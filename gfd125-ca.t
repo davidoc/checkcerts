@@ -67,12 +67,12 @@ for my $certfile(@certlist) {
     #2.3.2 if using DC, DCs should be at start
     if($subject_name->has_entry('DC')) {
         my $loc = $subject_name->get_index_by_type('DC');
-        is($loc, 0, "DC is at start of DN (2.3.2)");
+        is($loc, 0, "(2.3.2c) DC MUST be at start of DN, if DC used");
         my $oldloc = $loc;
         while($subject_name->has_entry('DC', $oldloc)) {
             my $loc = $subject_name->get_index_by_type('DC', $oldloc);
             next if $oldloc == $loc;
-            is($loc, $oldloc+1, "Multiple DCs are at start of DN (2.3.2)");
+            is($loc, $oldloc+1, "(2.3.2c) Multiple DCs MUST be at start of DN, if DC used)";
             $oldloc = $loc;
         }
     }
@@ -82,26 +82,30 @@ for my $certfile(@certlist) {
     SKIP: {
         fail('(2.3.2e Manual Check) if CN contains C it should match the Issuer country');
     }
-    ok(not($subject_name->has_long_entry('serialNumber')), '(2.3.3) serialNumber MUST NOT be used in DN)');
-    ok(not($subject_name->has_long_entry('emailAddress')), '(2.3.4) emailAddress SHOULD NOT be used in DN(2.3.4)');
-    ok(not($subject_name->has_entry('UID')), 'DN MUST NOT have UID (2.3.5)');
-    ok(not($subject_name->has_oid_entry('0.9.2342.19200300.100.1.1')), 'DN MUST NOT have userID (2.3.5)');
+    ok(not($subject_name->has_long_entry('serialNumber')), '(2.3.3) serialNumber MUST NOT be used in DN');
+    ok(not($subject_name->has_long_entry('emailAddress')), '(2.3.4) emailAddress SHOULD NOT be used in DN');
+    ok(not($subject_name->has_entry('UID')), '(2.3.5) UID MUST NOT be used in DN');
+    ok(not($subject_name->has_oid_entry('0.9.2342.19200300.100.1.1')), '(2.3.5) userID MUST NOT be used in DN');
 
     # Extensions in CA certificates 2.4
     my $exts = $x509->extensions_by_name();
 
     # basicConstraints 2.4.1
-    ok($$exts{'basicConstraints'}, 'CA cert MUST include basicConstraints (2.4.1)');
-    ok($$exts{'basicConstraints'}->basicC("ca"), 'basicConstraints CA: TRUE 2.4.1');
-    ok($$exts{'basicConstraints'}->critical(), 'basicConstraints SHOULD be marked critical (2.4.1)'); 
+    ok($$exts{'basicConstraints'}, '(2.4.1a) CA cert MUST include basicConstraints');
+    ok(($$exts{'basicConstraints'} && $$exts{'basicConstraints'}->basicC("ca")), '(2.4.1b) basicConstraints MUST be set to "CA: TRUE"');
+    ok(($$exts{'basicConstraints'} && $$exts{'basicConstraints'}->critical()), '(2.4.1c) basicConstraints SHOULD be marked critical'); 
 
     # keyUsage 2.4.2
-    ok($$exts{'keyUsage'}, 'CA cert MUST include keyUsage (2.4.2)');
-    $$exts{'keyUsage'} and ok($$exts{'keyUsage'}->is_critical(), 'keyUsage SHOULD be marked critical (2.4.2)');
+    ok($$exts{'keyUsage'}, '(2.4.2a) CA cert MUST include keyUsage');
+    ok(($$exts{'keyUsage'} and  $$exts{'keyUsage'}->is_critical()), '(2.4.2b) keyUsage SHOULD be marked critical');
     # For a CA cert, keyCertSign must be set and TODO crlSign must be set if the CA cert is used to directly issue crls
     $$exts{'keyUsage'} and my %key_hash = $$exts{'keyUsage'}->hash_bit_string();
-    $$exts{'keyUsage'} and ok($key_hash{'Certificate Sign'}, 'For a CA cert, keyCertSign must be set (2.4.2)');
-
+    $$exts{'keyUsage'} and ok($key_hash{'Certificate Sign'}, '(2.4.2c) keyCertSign MUST be set');
+    
+    TODO:{
+    $$exts{'keyUsage'} and ok($key_hash{'CRL Sign'}, '(2.4.2d MANUAL) crlSign MUST be set, if CA cert used directly to sign CRLs');
+    }
+    ### === REFACTORING HORIZON === ###
     # extendedKeyUsage 2.4.3
     ok(not($$exts{'extendedKeyUsage'}), "CA cert SHOULD NOT include extendedKeyUsage (2.4.3)");
     $$exts{'extendedKeyUsage'} and 
