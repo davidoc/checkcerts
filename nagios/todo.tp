@@ -1,0 +1,4 @@
+TAP 2 Nagios:
+- Test names should be defined as <suite>-<number>
+- Host names should be picked up from CA
+- Nagios config should be generated too!

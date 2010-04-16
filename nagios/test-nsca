@@ -1,0 +1,3 @@
+Grid-Ireland	gfd125-ca-2.4.2b	0	keyUsage SHOULD be marked critical
+Grid-Ireland	gfd125-ca-2.4.4	 1	CA cert SHOULD NOT include nsCertType extension
+
