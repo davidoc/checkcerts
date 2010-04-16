@@ -72,7 +72,7 @@ for my $certfile(@certlist) {
         while($subject_name->has_entry('DC', $oldloc)) {
             my $loc = $subject_name->get_index_by_type('DC', $oldloc);
             next if $oldloc == $loc;
-            is($loc, $oldloc+1, "(2.3.2c) Multiple DCs MUST be at start of DN, if DC used)";
+            is($loc, $oldloc+1, "(2.3.2c) Multiple DCs MUST be at start of DN, if DC used");
             $oldloc = $loc;
         }
     }
