@@ -1,4 +1,6 @@
 ## Test Suite for CA Certificates under GFD-C.125 "Grid Certificate Profile"
+##
+## David O'Callaghan <david.ocallaghan@cs.tcd.ie>
 
 # Pre-requisites
 use CheckCertsTest;
@@ -100,11 +102,12 @@ for my $certfile(@certlist) {
     TODO:{
     $$exts{'keyUsage'} and ok($key_hash{'CRL Sign'}, '(2.4.2d MANUAL) crlSign MUST be set, if CA cert used directly to sign CRLs');
     }
-    ### === REFACTORING HORIZON === ###
+
     # extendedKeyUsage 2.4.3
-    ok(not($$exts{'extendedKeyUsage'}), "CA cert SHOULD NOT include extendedKeyUsage (2.4.3)");
+    ok(not($$exts{'extendedKeyUsage'}), "(2.4.3a) CA cert SHOULD NOT include extendedKeyUsage");
     $$exts{'extendedKeyUsage'} and 
-    ok(not($$exts{'extendedKeyUsage'}->critical()), "extendedKeyUsage MUST NOT be marked critical (2.4.3)");
+    ok(not($$exts{'extendedKeyUsage'}->critical()), "(2.4.3b) extendedKeyUsage MUST NOT be marked critical");
+
     # nsCertType, nsComment, nsPolicyURL, nsRevocationURL 2.4.4
     foreach my $ext ("nsCertType", "nsComment", "nsPolicyURL", "nsRevocationURL"){
         ok(not($$exts{$ext}), "CA cert SHOULD NOT include $ext extension (2.4.4)");
