@@ -1,9 +1,4 @@
-##
 ## Test Suite for CA Certificates under GFD-C.125 "Grid Certificate Profile"
-##
-## David O'Callaghan <david.ocallaghan@cs.tcd.ie>
-## 2010-01-07
-##
 
 # Pre-requisites
 use CheckCertsTest;
