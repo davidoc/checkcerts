@@ -1,23 +1,24 @@
 Limitations:
-- The tests for CA certs against GFD-C.125 are incomplete.
-- The tests for EE certs against GFD-C.125 are incomplete.
-- The test framework returns OK/NOT OK for individual tests and PASS/FAIL for a test suite. This may not capture the nuances of the Grid Cert Profile or other docs.
+	- The tests for CA certs against GFD-C.125 are incomplete.
+	- The tests for EE certs against GFD-C.125 are incomplete.
+	- The test framework returns OK/NOT OK for individual tests and PASS/FAIL for a test suite. This may not capture the nuances of the Grid Cert Profile or other docs.
 
 From EU Grid PMA meeting - 2009-01:
-- Make some tests (SHOULDs, other ambiguous or harmless tests) into warnings
-- Create a Crypt::OpenSSL::Req module
+	- Make some tests (SHOULDs, other ambiguous or harmless tests) into warnings
+	- Create a Crypt::OpenSSL::Req module
 
 Other:
-- Better mechanism for defining/including common tests
-- Not clear if "TODO" tests are working. 
-- Output TAP to CSV?
-- Ensure that same number of tests are always run (e.g. include "pass" tests to balance conditional tests)
+	- Better mechanism for defining/including common tests
+	- Not clear if "TODO" tests are working. 
+	- Output TAP to CSV?
+	- Ensure that same number of tests are always run (e.g. include "pass" tests to balance conditional tests)
 
 Using the spreadsheet of implemented tets:
-- Add TODO tests
-- Add identifiers to all test outputs
-- Add manual test placeholders
-- Draft GFD-C.125bis ?
+	- Add TODO tests
+	- Add identifiers to all test outputs
+	- Add manual test placeholders
+	- Draft GFD-C.125bis ?
 
 Other tests:
-- Check for collisions between hash in OpenSSL < 1 and OpenSSL > 1 (-hash, -hash_old)
+	- Check for collisions between hash in OpenSSL < 1 and OpenSSL > 1 (-hash, -hash_old)
+	- Check that timestamp is correctly formatted
