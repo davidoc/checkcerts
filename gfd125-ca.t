@@ -101,17 +101,19 @@ for my $certfile(@certlist) {
 
     # keyUsage 2.4.2
     ok($$exts{'keyUsage'}, '(2.4.2a) CA cert MUST include keyUsage');
-    ok(($$exts{'keyUsage'} and  $$exts{'keyUsage'}->is_critical()), '(2.4.2b) keyUsage SHOULD be marked critical');
-    $$exts{'keyUsage'} and my %key_hash = $$exts{'keyUsage'}->hash_bit_string();
-    $$exts{'keyUsage'} and ok($key_hash{'Certificate Sign'}, '(2.4.2c) keyCertSign MUST be set');
+    ok(($$exts{'keyUsage'} and  $$exts{'keyUsage'}->is_critical()), 
+        '(2.4.2b) keyUsage SHOULD be marked critical');
+    my %keyUsage = $$exts{'keyUsage'}->hash_bit_string() if $$exts{'keyUsage'};
+    ok($keyUsage{'Certificate Sign'}, '(2.4.2c) keyCertSign MUST be set');
     TODO:{    
         local $TODO = "Manual check";
-        $$exts{'keyUsage'} and ok($key_hash{'CRL Sign'}, '(2.4.2d) crlSign MUST be set, if CA cert used directly to sign CRLs');
+        ok($keyUsage{'CRL Sign'}, '(2.4.2d) crlSign MUST be set, if CA cert used directly to sign CRLs');
     }
-    TODO:{
-        local $TODO = "Requires set comparison";
-        ok(0, '(2.4.2e) It is RECOMMENDED to set no more than crlSign and keyCertSign') if  $$exts{'keyUsage'} ;
-    }
+        
+    local $keyUsage_set = Set::Scalar->new_from_hash(\%keyUsage);
+    local $keyUsage_recommended_set = Set::Scalar->new(['CRL Sign','Certificate Sign']);
+    ok($keyUsage_set <= $keyUsage_recommended_set,
+        '(2.4.2e) It is RECOMMENDED to set no more than crlSign and keyCertSign. Certificate has: ' . set_to_string($keyUsage_set));
 
     # extendedKeyUsage 2.4.3
     ok(not($$exts{'extendedKeyUsage'}), "(2.4.3a) CA cert SHOULD NOT include extendedKeyUsage");
@@ -125,18 +127,11 @@ for my $certfile(@certlist) {
     }
 
     # nsCertType 2.4.4
-    if($$exts{'nsCertType'}){
-        my %ns_hash = $$exts{'nsCertType'}->hash_bit_string();
-        #$ns_hash{'SSL Client'} || $ns_hash{'S/MIME CA'} || $ns_hash{'Object Signing CA'} and
-        #  ok($key_hash{'Digital Signature'},
-        #    "(2.4.4c) The SSL Client, S/MIME CA and Object Signing CA attributes in nsCertType require the Digital Signature attribute of keyUsage. 
-        #    If used, nsCertType MUST be consistent with the keyUsage extension");
+    my %ns_hash = $$exts{'nsCertType'}->hash_bit_string() if $$exts{'nsCertType'};
 
-        $ns_hash{'SSL CA'} and
-        ok($key_hash{'Certificate Sign'}, 
-            "(2.4.4d) The SSL CA attribute of nsCertType requires the keyCertSign attribute of keyUsage. 
-            If used, nsCertType MUST be consistent with the keyUsage extension");
-    }
+    ok(((not $$exts{'nsCertType'}) or 
+        ($ns_hash{'SSL CA'} and $keyUsage{'Certificate Sign'})), 
+        "(2.4.4d) The SSL CA attribute of nsCertType requires the keyCertSign attribute of keyUsage.  If used, nsCertType MUST be consistent with the keyUsage extension");
 
     # certificatePolicies 2.4.5
     ok((not($$exts{'certificatePolicies'}) or 
@@ -146,7 +141,7 @@ for my $certfile(@certlist) {
     # crlDistributionPoints 2.4.6
     # Should be in any end-entity and intermediate (not self-signed) CA certs that issue CRLs.
     ok((($x509->is_selfsigned()) or
-        (not($x509->is_selfsigned()) and $key_hash{'CRL sign'} and
+        (not($x509->is_selfsigned()) and $keyUsage{'CRL sign'} and
             $$exts{'crlDistributionPoints'})),
         '(2.4.6a) crlDistributionPoints SHOULD be used in any intermediate (not self-signed) CA certs that issue CRLs');
 

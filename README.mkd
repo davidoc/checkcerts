@@ -2,7 +2,7 @@ checkcerts
 ===========
 
 David O'Callaghan <david.ocallaghan@cs.tcd.ie>
-2010-01-07
+2010-04-21
 
 
 Introduction
@@ -12,7 +12,7 @@ checkcerts runs tests against certificates.  The tests can check aspects of a
 certificate's profile against requirements or standards.
 
 This software was developed based on a requirement from IGTF to check
-compliance of CA certificates against the Grid Certificate Profile GFD-C.125.
+compliance of certificates against the Grid Certificate Profile GFD-C.125.
 
 
 Requirements
@@ -25,6 +25,7 @@ with operating system distributions or from CPAN (cpan.org).
  * Pod::Usage
  * Test::Harness
  * Test::More
+ * Set::Scalar
  * Crypt::OpenSSL::X509 (* but see NOTE below)
 
 (* NOTE) The supplied test suite "gfd125-ca.t" uses a pre-release version of
@@ -42,4 +43,4 @@ To try it out, run:
 
     ./checkcerts.pl -t gfd125-ca.t -c cacert.pem
 
-You should expect to see 3 failures.
+You should expect to see a number of failures.
