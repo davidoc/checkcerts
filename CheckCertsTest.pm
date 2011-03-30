@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 # Pre-requisites
-use Crypt::OpenSSL::X509 1.0;
+use Crypt::OpenSSL::X509 1.7;
 use Set::Scalar;
 
 our @certlist = ();

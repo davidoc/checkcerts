@@ -2,7 +2,7 @@ checkcerts
 ===========
 
 David O'Callaghan <david.ocallaghan@cs.tcd.ie>
-2010-04-21
+2011-03-30
 
 
 Introduction
@@ -26,11 +26,11 @@ with operating system distributions or from CPAN (cpan.org).
  * Test::Harness
  * Test::More
  * Set::Scalar
- * Crypt::OpenSSL::X509 (* but see NOTE below)
+ * Crypt::OpenSSL::X509 (* v1.7 See NOTE below)
 
-(* NOTE) The supplied test suite "gfd125-ca.t" uses a pre-release version of
+(* NOTE) The supplied test suite "gfd125-ca.t" uses a version of
 Crypt::OpenSSL::X509 that is not yet widely distributed.  It can be downloaded
-from http://github.com/davidoc/perl-crypt-openssl-x509/tree/master.
+from http://github.com/dsully/perl-crypt-openssl-x509/.
 
 
 Running
